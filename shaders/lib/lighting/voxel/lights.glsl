@@ -49,6 +49,13 @@
             case LIGHT_COPPER_BULB_WEATHERED:
                 lightColor = vec3(0.9, 0.8, 0.5);
                 break;
+            case LIGHT_COPPER_TORCH_FLOOR:
+            case LIGHT_COPPER_TORCH_WALL_N:
+            case LIGHT_COPPER_TORCH_WALL_E:
+            case LIGHT_COPPER_TORCH_WALL_S:
+            case LIGHT_COPPER_TORCH_WALL_W:
+                lightColor = LIGHT_COLOR_COPPER_TORCH;
+                break;
             case LIGHT_CREAKING_HEART:
             case LIGHT_EYEBLOSSOM:
                 lightColor = vec3(0.902, 0.502, 0.184);
@@ -177,14 +184,14 @@
             case LIGHT_SOUL_CAMPFIRE:
             case LIGHT_SOUL_FIRE:
             case LIGHT_SOUL_STREET_LAMP:
-                lightColor = LIGHT_SOUL_TORCH;
+                lightColor = LIGHT_COLOR_SOUL_TORCH;
                 break;
             case LIGHT_TORCH_FLOOR:
             case LIGHT_TORCH_WALL_N:
             case LIGHT_TORCH_WALL_E:
             case LIGHT_TORCH_WALL_S:
             case LIGHT_TORCH_WALL_W:
-                lightColor = LIGHT_TORCH;
+                lightColor = LIGHT_COLOR_TORCH;
                 break;
         }
 
@@ -511,6 +518,13 @@
                 break;
             case LIGHT_COPPER_BULB_WEATHERED:
                 lightRange = 8.0;
+                break;
+            case LIGHT_COPPER_TORCH_FLOOR:
+            case LIGHT_COPPER_TORCH_WALL_N:
+            case LIGHT_COPPER_TORCH_WALL_E:
+            case LIGHT_COPPER_TORCH_WALL_S:
+            case LIGHT_COPPER_TORCH_WALL_W:
+                lightRange = 14.0;
                 break;
             case LIGHT_CREAKING_HEART:
                 lightRange = 8.0;
@@ -1104,26 +1118,31 @@
             case LIGHT_SOUL_LANTERN:
                 lightOffset = vec3(0.0, -0.25, 0.0);
                 break;
+            case LIGHT_COPPER_TORCH_FLOOR:
             case LIGHT_REDSTONE_TORCH_FLOOR:
             case LIGHT_SOUL_TORCH_FLOOR:
             case LIGHT_TORCH_FLOOR:
                 lightOffset = modelPart(0, 1, 0);
                 break;
+            case LIGHT_COPPER_TORCH_WALL_N:
             case LIGHT_REDSTONE_TORCH_WALL_N:
             case LIGHT_SOUL_TORCH_WALL_N:
             case LIGHT_TORCH_WALL_N:
                 lightOffset = modelPart(0, 4.5, 4.5);
                 break;
+            case LIGHT_COPPER_TORCH_WALL_E:
             case LIGHT_REDSTONE_TORCH_WALL_E:
             case LIGHT_SOUL_TORCH_WALL_E:
             case LIGHT_TORCH_WALL_E:
                 lightOffset = modelPart(-4.5, 4.5, 0);
                 break;
+            case LIGHT_COPPER_TORCH_WALL_S:
             case LIGHT_REDSTONE_TORCH_WALL_S:
             case LIGHT_SOUL_TORCH_WALL_S:
             case LIGHT_TORCH_WALL_S:
                 lightOffset = modelPart(0, 4.5, -4.5);
                 break;
+            case LIGHT_COPPER_TORCH_WALL_W:
             case LIGHT_REDSTONE_TORCH_WALL_W:
             case LIGHT_SOUL_TORCH_WALL_W:
             case LIGHT_TORCH_WALL_W:

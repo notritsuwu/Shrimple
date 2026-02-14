@@ -17,7 +17,7 @@ void GetVoxelBlockParts(const in uint blockId, out uint shapeCount, out vec3 bou
         boundsMax[1] = modelPart(10,  9, 10);
     }
 
-    if (blockId == BLOCK_REDSTONE_TORCH_FLOOR_LIT || blockId == BLOCK_SOUL_TORCH_FLOOR || blockId == BLOCK_TORCH_FLOOR) {
+    if (blockId == BLOCK_REDSTONE_TORCH_FLOOR_LIT || blockId == BLOCK_SOUL_TORCH_FLOOR || blockId == BLOCK_COPPER_TORCH_FLOOR || blockId == BLOCK_TORCH_FLOOR) {
         shapeCount = 1u;
         boundsMin[0] = modelPart( 7,  0,  7);
         boundsMax[0] = modelPart( 9, 10,  9);

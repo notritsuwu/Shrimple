@@ -62,6 +62,7 @@
     "playerBodyVector",
     "eyePosition",
     "relativeEyePosition",
+    "cloudHeight",
     "cloudTime",
     "blindness",
     "nightVision",
@@ -73,7 +74,8 @@
     "WaterAbsorbColor",
     "weatherStrength",
     "pixelSize",
-    "taa_offset"
+    "taa_offset",
+    "vxRenderDistance"
   ],
   "samplers": {
     "lightmap": "sampler2D",

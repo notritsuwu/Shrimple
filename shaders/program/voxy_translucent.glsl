@@ -27,6 +27,7 @@
 
 #include "/lib/sampling/ign.glsl"
 #include "/lib/utility/anim.glsl"
+#include "/lib/utility/oklab.glsl"
 #include "/lib/utility/lightmap.glsl"
 
 #ifdef WORLD_SKY_ENABLED
@@ -54,15 +55,27 @@
     #include "/lib/sampling/erp.glsl"
     #include "/lib/sampling/noise.glsl"
 
+    #include "/lib/fog/fog_common.glsl"
+
+    #if SKY_TYPE == SKY_TYPE_CUSTOM
+        #include "/lib/fog/fog_custom.glsl"
+
+        #ifdef WORLD_WATER_ENABLED
+            #include "/lib/fog/fog_water_custom.glsl"
+        #endif
+    #elif SKY_TYPE == SKY_TYPE_VANILLA
+        #include "/lib/fog/fog_vanilla.glsl"
+    #endif
+
+    #ifdef WORLD_SKY_ENABLED
+        #include "/lib/sky/sky_render.glsl"
+    #endif
+
+    #include "/lib/fog/fog_render.glsl"
+
     #ifdef WORLD_SKY_ENABLED
         #include "/lib/clouds/cloud_common.glsl"
         #include "/lib/world/lightning.glsl"
-    #endif
-
-    #include "/lib/fog/fog_common.glsl"
-
-    #if SKY_TYPE == SKY_TYPE_VANILLA
-        #include "/lib/fog/fog_vanilla.glsl"
     #endif
 
     #include "/lib/lighting/fresnel.glsl"
@@ -207,7 +220,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 //        }
 //    #endif
 
-    #if defined DEFERRED_BUFFER_ENABLED || defined EFFECT_SSAO_ENABLED
+    #if defined(DEFERRED_BUFFER_ENABLED) //|| defined(EFFECT_SSAO_ENABLED)
         outDeferredTexNormal = localTexNormal * 0.5 + 0.5;
     #endif
 
@@ -320,6 +333,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         #endif
 
         #ifdef SKY_BORDER_FOG_ENABLED
+            vec3 localViewDir = normalize(localPos);
             ApplyFog(color, localPos, localViewDir);
             color.a = 1.0;
         #endif

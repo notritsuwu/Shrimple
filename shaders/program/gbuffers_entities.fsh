@@ -150,6 +150,10 @@ uniform vec3 eyePosition;
     uniform float dhFarPlane;
 #endif
 
+#ifdef VOXY
+    uniform int vxRenderDistance;
+#endif
+
 #if AF_SAMPLES > 1
     uniform float viewWidth;
     uniform float viewHeight;

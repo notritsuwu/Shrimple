@@ -51,6 +51,10 @@ uniform int frameCounter;
     uniform float dhFarPlane;
 #endif
 
+#ifdef VOXY
+    uniform int vxRenderDistance;
+#endif
+
 #if MC_VERSION >= 11700 && defined ALPHATESTREF_ENABLED
     uniform float alphaTestRef;
 #endif

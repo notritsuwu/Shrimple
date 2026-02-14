@@ -20,6 +20,9 @@ uint GetItemLightId(const in int itemId) {
         case ITEM_BLAZE_ROD:
             lightId = LIGHT_CAVEVINE_BERRIES;
             break;
+        case ITEM_COPPER_TORCH:
+            lightId = LIGHT_COPPER_TORCH_FLOOR;
+            break;
         case ITEM_CRYING_OBSIDIAN:
             lightId = LIGHT_CRYING_OBSIDIAN;
             break;

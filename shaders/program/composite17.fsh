@@ -336,7 +336,7 @@ void main() {
 
     #ifdef DISTANT_HORIZONS
         float farMax = 0.5*dhFarPlane;// - 0.1;
-    #elif defined()
+    #elif defined(VOXY)
         float farMax = 0.8 * vxRenderDistance * 16.0;
     #else
         float farMax = far * 2.0;// - 0.002;

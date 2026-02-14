@@ -107,6 +107,21 @@ uint GetSceneLightType(const in uint blockId) {
         case BLOCK_COPPER_BULB_WEATHERED_LIT:
             lightType = LIGHT_COPPER_BULB_WEATHERED;
             break;
+        case BLOCK_COPPER_TORCH_FLOOR:
+            lightType = LIGHT_COPPER_TORCH_FLOOR;
+            break;
+        case BLOCK_COPPER_TORCH_WALL_N:
+            lightType = LIGHT_COPPER_TORCH_WALL_N;
+            break;
+        case BLOCK_COPPER_TORCH_WALL_E:
+            lightType = LIGHT_COPPER_TORCH_WALL_E;
+            break;
+        case BLOCK_COPPER_TORCH_WALL_S:
+            lightType = LIGHT_COPPER_TORCH_WALL_S;
+            break;
+        case BLOCK_COPPER_TORCH_WALL_W:
+            lightType = LIGHT_COPPER_TORCH_WALL_W;
+            break;
         case BLOCK_CREAKING_HEART:
             lightType = LIGHT_CREAKING_HEART;
             break;

@@ -10,6 +10,8 @@
 
 #define LIGHT_COLOR_CAVEVINE_BERRIES vec3(0.902, 0.471, 0.118) // [0]
 
+#define LIGHT_COLOR_COPPER_TORCH vec3(0.494, 0.902, 0.098) // [0]
+
 #define LIGHT_COLOR_CRYING_OBSIDIAN vec3(0.390, 0.065, 0.646) // [0]
 
 #define LIGHT_COLOR_END_ROD vec3(0.957, 0.929, 0.875) // [0]
@@ -58,6 +60,6 @@
 
 #define LIGHT_COLOR_SMOKER vec3(0.798, 0.519, 0.289) // [0]
 
-#define LIGHT_SOUL_TORCH vec3(0.097, 0.721, 0.899) // [0]
+#define LIGHT_COLOR_SOUL_TORCH vec3(0.097, 0.721, 0.899) // [0]
 
-#define LIGHT_TORCH vec3(0.902, 0.553, 0.204) // [0]
+#define LIGHT_COLOR_TORCH vec3(0.902, 0.553, 0.204) // [0]
