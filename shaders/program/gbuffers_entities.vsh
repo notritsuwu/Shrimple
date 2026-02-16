@@ -10,6 +10,7 @@ out VertexData {
 
 
 //uniform mat4 gbufferModelViewInverse;
+//uniform vec4 entityColor;
 
 #ifdef TAA_ENABLED
     uniform vec2 taa_offset = vec2(0.0);

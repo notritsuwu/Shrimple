@@ -1,7 +1,7 @@
 #version 430 compatibility
 
 #define RENDER_TERRAIN
-#define RENDER_OPAQUE
+#define RENDER_TRANSLUCENT
 
-#include "end.glsl"
+#include "overworld.glsl"
 #include "/program/gbuffers_terrain.fsh"

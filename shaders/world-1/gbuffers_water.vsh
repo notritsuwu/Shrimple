@@ -1,7 +1,7 @@
 #version 430 compatibility
 
 #define RENDER_TERRAIN
-#define RENDER_SOLID
+#define RENDER_WATER
 
-#include "end.glsl"
+#include "nether.glsl"
 #include "/program/gbuffers_terrain.vsh"

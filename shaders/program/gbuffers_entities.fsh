@@ -15,6 +15,7 @@ uniform sampler2D gtexture;
     uniform sampler2D lightmap;
 #endif
 
+uniform vec4 entityColor;
 uniform float alphaTestRef;
 
 #include "/lib/sampling/lightmap.glsl"
@@ -28,13 +29,14 @@ void main() {
 
 	vec4 color = textureLod(gtexture, vIn.texcoord, mip);
 
-    // opaque is a fallback for cutout not being supported
-    // #if defined(RENDER_CUTOUT) || defined(RENDER_OPAQUE)
-    #ifndef RENDER_SOLID
+//    #if defined(RENDER_OPAQUE)
         if (color.a < alphaTestRef) discard;
-    #endif
+//    #endif
 
-	color.rgb *= vIn.color.rgb;
+	color *= vIn.color;
+
+    color.rgb = mix(color.rgb, entityColor.rgb, entityColor.a);
+
     vec3 albedo = RGBToLinear(color.rgb);
 
     #if LIGHTING_MODE == LIGHTING_MODE_CUSTOM

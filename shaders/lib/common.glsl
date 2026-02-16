@@ -2,7 +2,7 @@
 const int colortex0Format  = RGBA16F;
 */
 
-const float sunPathRotation = 5; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10 -5 0 1 2 5 10 15 20 25 30 35 40 45 50 55 60]
+const float sunPathRotation = 0; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10 -5 0 1 2 5 10 15 20 25 30 35 40 45 50 55 60]
 
 #define LIGHTING_MODE 0 // [0 1]
 
