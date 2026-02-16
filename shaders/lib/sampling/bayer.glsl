@@ -1,13 +1,13 @@
-float Bayer2(vec2 a) {
-    a = floor(a);
-    return fract(a.x / 2. + a.y * a.y * .75);
-}
-
-#define Bayer4(a)   (Bayer2 (.5 *(a)) * .25 + Bayer2(a))
-#define Bayer8(a)   (Bayer4 (.5 *(a)) * .25 + Bayer2(a))
-#define Bayer16(a)  (Bayer8 (.5 *(a)) * .25 + Bayer2(a))
-#define Bayer32(a)  (Bayer16(.5 *(a)) * .25 + Bayer2(a))
-#define Bayer64(a)  (Bayer32(.5 *(a)) * .25 + Bayer2(a))
+//float Bayer2(vec2 a) {
+//    a = floor(a);
+//    return fract(a.x / 2. + a.y * a.y * .75);
+//}
+//
+//#define Bayer4(a)   (Bayer2 (.5 *(a)) * .25 + Bayer2(a))
+//#define Bayer8(a)   (Bayer4 (.5 *(a)) * .25 + Bayer2(a))
+//#define Bayer16(a)  (Bayer8 (.5 *(a)) * .25 + Bayer2(a))
+//#define Bayer32(a)  (Bayer16(.5 *(a)) * .25 + Bayer2(a))
+//#define Bayer64(a)  (Bayer32(.5 *(a)) * .25 + Bayer2(a))
 
 
 const mat4 BayerSamples = mat4(
@@ -21,7 +21,7 @@ float GetBayerValue(const in ivec2 position) {
     return BayerSamples[offset.x][offset.y];
 }
 
-#ifndef RENDER_COMPUTE
-    float GetScreenBayerValue(ivec2 offset) {return GetBayerValue(ivec2(gl_FragCoord.xy) + offset);}
-    float GetScreenBayerValue() {return GetBayerValue(ivec2(gl_FragCoord.xy));}
-#endif
+//#ifndef RENDER_COMPUTE
+//    float GetScreenBayerValue(ivec2 offset) {return GetBayerValue(ivec2(gl_FragCoord.xy) + offset);}
+//    float GetScreenBayerValue() {return GetBayerValue(ivec2(gl_FragCoord.xy));}
+//#endif

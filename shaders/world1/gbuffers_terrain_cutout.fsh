@@ -1,6 +1,6 @@
 #version 430 compatibility
 
-#define RENDER_OPAQUE
+#define RENDER_CUTOUT
 
-#include "nether.glsl"
+#include "end.glsl"
 #include "/program/gbuffers_terrain.fsh"

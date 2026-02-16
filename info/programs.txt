@@ -1,3 +1,20 @@
+composite90	    taa resolve
+composite91     taa sharpen /CAS
+
+final			final --/ debug output
+
+
+
+
+
+
+
+
+
+
+
+
+
 setup1			setup static scene
 --setup2			build voxel part collissions
 setup3			build static block data

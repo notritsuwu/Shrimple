@@ -1,0 +1,115 @@
+#include "/lib/constants.glsl"
+#include "/lib/common.glsl"
+
+#define texFinal colortex0
+#define imgFinal colorimg0
+
+layout (local_size_x = 16, local_size_y = 16) in;
+const vec2 workGroupsRender = vec2(1.0, 1.0);
+
+
+const float TAA_RejectionStrength = 0.1;
+const int TAA_MaxAccumFrames = 8;
+
+layout(rgba16f) uniform image2D imgFinal;
+layout(rgba16f) uniform image2D imgFinalPrev;
+
+shared vec3 sharedBuffer[18*18];
+
+uniform sampler2D texFinal;
+uniform sampler2D texFinalPrev;
+uniform sampler2D depthtex0;
+
+uniform mat4 gbufferProjectionInverse;
+uniform mat4 gbufferModelViewInverse;
+uniform vec3 cameraPosition;
+uniform mat4 gbufferPreviousModelView;
+uniform mat4 gbufferPreviousProjection;
+uniform vec3 previousCameraPosition;
+uniform vec2 viewSize;
+
+
+uvec2 getSharedUV(const in uint z) {
+    return uvec2(z % 18, z / 18);
+}
+
+int getSharedIndex(const in ivec2 uv) {
+    return uv.y * 18 + uv.x;
+}
+
+
+void main() {
+    uint i_base = gl_LocalInvocationIndex * 2u;
+
+    if (i_base < (18*18)) {
+        uvec2 uv_base = gl_WorkGroupID.xy * 16u - 1u;
+
+        for (uint i = 0u; i < 2u; i++) {
+            uint i_shared = i_base + i;
+
+            if (i_shared < (18*18)) {
+                uvec2 uv_i = getSharedUV(i_shared);
+                sharedBuffer[i_shared] = texelFetch(texFinal, ivec2(uv_base + uv_i), 0).rgb;
+            }
+        }
+    }
+
+    barrier();
+
+    if (all(lessThan(gl_GlobalInvocationID.xy, viewSize))) {
+        vec2 texcoord = (gl_GlobalInvocationID.xy + 0.5) / viewSize;
+        float depthNow = textureLod(depthtex0, texcoord, 0).r;
+        vec3 clipPos = vec3(texcoord, depthNow) * 2.0 - 1.0;
+
+        vec3 viewPos = unproject(gbufferProjectionInverse, clipPos);
+
+        vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
+
+        const vec3 velocity = vec3(0.0); // TODO
+        vec3 localPosPrev = localPos - velocity + (cameraPosition - previousCameraPosition);
+
+        vec3 viewPosPrev = mul3(gbufferPreviousModelView, localPosPrev);
+
+        vec3 clipPosPrev = unproject(gbufferPreviousProjection, viewPosPrev);
+
+        vec2 uv_prev = clipPosPrev.xy * 0.5 + 0.5;
+
+
+        #ifdef TAA_SHARPEN_HISTORY
+            vec4 lastColor = sample_CatmullRom_RGBA(texFinalPrev, uv_prev, viewSize);
+        #else
+            vec4 lastColor = textureLod(texFinalPrev, uv_prev, 0);
+        #endif
+
+        float mixRate = TAA_MaxAccumFrames;//clamp(lastColor.a, 0.0, TAA_MaxAccumFrames);
+
+        if (saturate(uv_prev) != uv_prev) mixRate = 0.0;
+
+        ivec2 uv = ivec2(gl_LocalInvocationID.xy) + 1;
+
+        vec3 in0 = sharedBuffer[getSharedIndex(uv)];
+        vec3 in1 = sharedBuffer[getSharedIndex(uv + ivec2(+1,  0))];
+        vec3 in2 = sharedBuffer[getSharedIndex(uv + ivec2(-1,  0))];
+        vec3 in3 = sharedBuffer[getSharedIndex(uv + ivec2( 0, +1))];
+        vec3 in4 = sharedBuffer[getSharedIndex(uv + ivec2( 0, -1))];
+        vec3 in5 = sharedBuffer[getSharedIndex(uv + ivec2(+1, +1))];
+        vec3 in6 = sharedBuffer[getSharedIndex(uv + ivec2(-1, +1))];
+        vec3 in7 = sharedBuffer[getSharedIndex(uv + ivec2(+1, -1))];
+        vec3 in8 = sharedBuffer[getSharedIndex(uv + ivec2(-1, -1))];
+
+        vec3 antialiased = mix(lastColor.rgb, in0, 1.0 / (mixRate + 1.0));
+
+        vec3 minColor = min(min(min(min(in0, in1), in2), in3), in4);
+        minColor = min(min(min(min(minColor, in5), in6), in7), in8);
+
+        vec3 maxColor = max(max(max(max(in0, in1), in2), in3), in4);
+        maxColor = max(max(max(max(maxColor, in5), in6), in7), in8);
+
+        vec3 clamped = clamp(antialiased, minColor, maxColor);
+//        vec3 diff = clamped - antialiased;
+//        mixRate *= 1.0 / (dot(diff, diff) * TAA_RejectionStrength + 1.0);
+
+        imageStore(imgFinal, ivec2(gl_GlobalInvocationID.xy), vec4(clamped, 1.0));
+        imageStore(imgFinalPrev, ivec2(gl_GlobalInvocationID.xy), vec4(clamped, (mixRate + 1.0)));
+    }
+}
