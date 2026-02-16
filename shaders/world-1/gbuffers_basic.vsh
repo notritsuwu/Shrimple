@@ -1,7 +1,6 @@
 #version 430 compatibility
 
-#define RENDER_TERRAIN
-#define RENDER_OPAQUE
+#define RENDER_BASIC
 
 #include "nether.glsl"
 #include "/program/gbuffers_main.vsh"

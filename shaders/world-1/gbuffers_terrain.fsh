@@ -4,4 +4,4 @@
 #define RENDER_OPAQUE
 
 #include "nether.glsl"
-#include "/program/gbuffers_terrain.fsh"
+#include "/program/gbuffers_main.fsh"

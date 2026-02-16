@@ -4,4 +4,4 @@
 #define RENDER_TRANSLUCENT
 
 #include "end.glsl"
-#include "/program/gbuffers_entities.vsh"
+#include "/program/gbuffers_main.vsh"

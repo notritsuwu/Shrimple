@@ -4,4 +4,4 @@
 #define RENDER_TRANSLUCENT
 
 #include "overworld.glsl"
-#include "/program/gbuffers_terrain.vsh"
+#include "/program/gbuffers_main.vsh"

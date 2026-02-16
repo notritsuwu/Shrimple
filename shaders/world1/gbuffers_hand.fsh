@@ -1,7 +1,7 @@
 #version 430 compatibility
 
-#define RENDER_TERRAIN
+#define RENDER_HAND
 #define RENDER_OPAQUE
 
 #include "end.glsl"
-#include "/program/gbuffers_main.fsh"
+#include "/program/gbuffers_hand.fsh"

@@ -4,4 +4,4 @@
 #define RENDER_OPAQUE
 
 #include "nether.glsl"
-#include "/program/gbuffers_entities.vsh"
+#include "/program/gbuffers_main.vsh"

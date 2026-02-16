@@ -4,4 +4,4 @@
 #define RENDER_CUTOUT
 
 #include "nether.glsl"
-#include "/program/gbuffers_terrain.fsh"
+#include "/program/gbuffers_main.fsh"

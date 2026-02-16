@@ -18,7 +18,13 @@ layout(location = 0) out vec4 outFinal;
 void main() {
     vec4 color = textureLod(gtexture, vIn.texcoord, 0);
 
-    color.rgb *= vIn.color.rgb;
+    color *= vIn.color;
+
+    if (renderStage == MC_RENDER_STAGE_SUN) {
+        color.rgb *= 4.0;
+    }
+
+    color = saturate(color);
 
     color.rgb = RGBToLinear(color.rgb);
 

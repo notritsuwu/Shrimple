@@ -1,7 +1,6 @@
 #version 430 compatibility
 
-#define RENDER_ENTITY
-#define RENDER_TRANSLUCENT
+#define RENDER_BASIC
 
 #include "end.glsl"
 #include "/program/gbuffers_main.fsh"

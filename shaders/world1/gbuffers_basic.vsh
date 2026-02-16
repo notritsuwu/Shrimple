@@ -1,7 +1,6 @@
 #version 430 compatibility
 
-#define RENDER_TERRAIN
-#define RENDER_SOLID
+#define RENDER_BASIC
 
-#include "nether.glsl"
+#include "end.glsl"
 #include "/program/gbuffers_main.vsh"

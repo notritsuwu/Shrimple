@@ -7,6 +7,10 @@ in VertexData {
     vec2 texcoord;
     vec3 localPos;
     vec3 localNormal;
+
+    #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)
+        float chunkFade;
+    #endif
 } vIn;
 
 
@@ -22,11 +26,17 @@ uniform sampler2D gtexture;
     uniform sampler2D shadowtex1;
 #endif
 
+uniform vec3 fogColor;
+uniform vec3 skyColor;
 uniform vec4 entityColor;
 uniform float alphaTestRef;
+uniform vec3 shadowLightPosition;
+uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 
+#include "/lib/oklab.glsl"
+#include "/lib/fog.glsl"
 #include "/lib/sampling/lightmap.glsl"
 
 #ifdef SHADOWS_ENABLED
@@ -42,20 +52,26 @@ void main() {
 
 	vec4 color = textureLod(gtexture, vIn.texcoord, mip);
 
-//    #if defined(RENDER_OPAQUE)
+    // opaque is a fallback for cutout not being supported
+    // #if defined(RENDER_CUTOUT) || defined(RENDER_OPAQUE)
+    #ifndef RENDER_SOLID
         if (color.a < alphaTestRef) discard;
-//    #endif
+    #endif
 
 	color *= vIn.color;
 
-    color.rgb = mix(color.rgb, entityColor.rgb, entityColor.a);
+    #ifdef RENDER_ENTITY
+        color.rgb = mix(color.rgb, entityColor.rgb, entityColor.a);
+    #endif
 
     vec3 albedo = RGBToLinear(color.rgb);
 
     float shadow = 1.0;
     #ifdef SHADOWS_ENABLED
+        float viewDist = length(vIn.localPos);
+
         vec3 shadowPos = mul3(shadowModelView, vIn.localPos);
-        shadowPos.z += 0.16;
+        shadowPos.z += 0.016 * viewDist;
         shadowPos = (shadowProjection * vec4(shadowPos, 1.0)).xyz;
 
         distort(shadowPos.xy);
@@ -67,6 +83,12 @@ void main() {
             float shadowDepth = textureLod(shadowtex1, shadowPos.xy, 0).r;
             shadow = step(shadowPos.z, shadowDepth);
         #endif
+
+        vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
+
+        vec3 localNormal = normalize(vIn.localNormal);
+        float shadow_NoL = dot(localNormal, localSkyLightDir);
+        shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
 
     #if LIGHTING_MODE == LIGHTING_MODE_CUSTOM
@@ -74,12 +96,13 @@ void main() {
         color.rgb = albedo.rgb;
     #else
         vec2 lmcoord = vIn.lmcoord;
-        vec3 localNormal = normalize(vIn.localNormal);
 
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
-        float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
-        lmcoord.y *= sky_lit;
+        #ifdef RENDER_ENTITY
+            float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
+            lmcoord.y *= sky_lit;
+        #endif
 
         lmcoord = LightMapTex(lmcoord);
         vec3 lit = textureLod(lightmap, lmcoord, 0).rgb;
@@ -87,6 +110,25 @@ void main() {
 
         color.rgb = albedo.rgb * lit;
     #endif
+
+    float fogF = 0.0;
+
+    // TODO: regular fog
+
+    #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)
+        #ifdef RENDER_TRANSLUCENT
+            color.a *= vIn.chunkFade;
+        #else
+            fogF = max(fogF, 1.0 - vIn.chunkFade);
+        #endif
+    #endif
+
+    vec3 fogColorL = RGBToLinear(fogColor);
+    vec3 skyColorL = RGBToLinear(skyColor);
+    vec3 localViewDir = normalize(vIn.localPos);
+    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+
+    color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
     outFinal = color;
 }
