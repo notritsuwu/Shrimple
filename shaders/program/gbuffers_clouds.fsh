@@ -12,7 +12,11 @@ uniform sampler2D gtexture;
 
 uniform int renderStage;
 uniform vec3 skyColor;
+uniform float far;
 uniform vec3 fogColor;
+uniform float fogDensity;
+uniform float fogStart;
+uniform float fogEnd;
 
 #include "/lib/oklab.glsl"
 #include "/lib/fog.glsl"
@@ -27,6 +31,19 @@ void main() {
     color *= vIn.color;
 
     color.rgb = RGBToLinear(color.rgb);
+
+    float viewDist = length(vIn.localPos);
+
+    float borderFogF = 0.0;//smoothstep(0.94 * far, far, viewDist);
+    float envFogF = smoothstep(fogStart, fogEnd, viewDist);
+    float fogF = max(borderFogF, envFogF);
+
+    vec3 fogColorL = RGBToLinear(fogColor);
+    vec3 skyColorL = RGBToLinear(skyColor);
+    vec3 localViewDir = normalize(vIn.localPos);
+    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+
+    color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
     outFinal = color;
 }

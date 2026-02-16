@@ -26,7 +26,11 @@ uniform sampler2D gtexture;
     uniform sampler2D shadowtex1;
 #endif
 
+uniform float far;
 uniform vec3 fogColor;
+uniform float fogDensity;
+uniform float fogStart;
+uniform float fogEnd;
 uniform vec3 skyColor;
 uniform vec4 entityColor;
 uniform float alphaTestRef;
@@ -65,11 +69,11 @@ void main() {
     #endif
 
     vec3 albedo = RGBToLinear(color.rgb);
+    float viewDist = length(vIn.localPos);
+    vec3 localNormal = normalize(vIn.localNormal);
 
     float shadow = 1.0;
     #ifdef SHADOWS_ENABLED
-        float viewDist = length(vIn.localPos);
-
         vec3 shadowPos = mul3(shadowModelView, vIn.localPos);
         shadowPos.z += 0.016 * viewDist;
         shadowPos = (shadowProjection * vec4(shadowPos, 1.0)).xyz;
@@ -86,7 +90,6 @@ void main() {
 
         vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
 
-        vec3 localNormal = normalize(vIn.localNormal);
         float shadow_NoL = dot(localNormal, localSkyLightDir);
         shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
@@ -111,9 +114,10 @@ void main() {
         color.rgb = albedo.rgb * lit;
     #endif
 
-    float fogF = 0.0;
-
-    // TODO: regular fog
+    float borderFogF = smoothstep(0.94 * far, far, viewDist);
+    float envFogF = smoothstep(fogStart, fogEnd, viewDist);// * fogDensity;
+//    float envFogF = exp(-5.0 * (1.0 - saturate(viewDist/far)));
+    float fogF = max(borderFogF, envFogF);
 
     #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)
         #ifdef RENDER_TRANSLUCENT
