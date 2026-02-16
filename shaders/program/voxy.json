@@ -1,0 +1,26 @@
+{
+  "unusedString": "
+    #include "/lib/constants.glsl"
+    #include "/lib/common.glsl"
+  ",
+  "version": 1,
+  "excludeLodsFromVanillaDepth": false,
+  "opaqueDrawBuffers": [0],
+  "translucentDrawBuffers": [0],
+  #ifdef TAA_ENABLED
+    "taaOffset": "{return taa_offset;}",
+  #endif
+  "uniforms": [
+    "fogStart",
+    "fogEnd",
+    "fogShape",
+    "fogColor",
+    "skyColor",
+    "viewSize",
+    "taa_offset",
+    "vxRenderDistance"
+  ],
+  "samplers": {
+    "lightmap": "sampler2D"
+  }
+}

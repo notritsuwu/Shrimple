@@ -1,0 +1,4 @@
+#define RENDER_OPAQUE
+
+#include "nether.glsl"
+#include "/program/voxy.glsl"
