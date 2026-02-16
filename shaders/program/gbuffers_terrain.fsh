@@ -13,7 +13,13 @@ in VertexData {
 
 uniform sampler2D gtexture;
 
+#if LIGHTING_MODE == LIGHTING_MODE_VANILLA
+    uniform sampler2D lightmap;
+#endif
+
 uniform float alphaTestRef;
+
+#include "/lib/sampling/lightmap.glsl"
 
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec4 outFinal;
@@ -30,6 +36,17 @@ void main() {
 
 	color.rgb *= vIn.color.rgb;
     vec3 albedo = RGBToLinear(color.rgb);
+
+    #if LIGHTING_MODE == LIGHTING_MODE_CUSTOM
+        // TODO
+        color.rgb = albedo.rgb;
+    #else
+        vec2 lmcoord = LightMapTex(vIn.lmcoord);
+        vec3 lit = textureLod(lightmap, lmcoord, 0).rgb;
+        lit = RGBToLinear(lit);
+
+        color.rgb = albedo.rgb * lit;
+    #endif
 
     outFinal = color;
 }

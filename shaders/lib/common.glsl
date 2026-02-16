@@ -4,6 +4,8 @@ const int colortex0Format  = RGBA16F;
 
 const float sunPathRotation = 5; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10 -5 0 1 2 5 10 15 20 25 30 35 40 45 50 55 60]
 
+#define LIGHTING_MODE 0 // [0 1]
+
 #define TAA_ENABLED
 #define TAA_SHARPNESS 50 //[0 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100]
 //#define TAA_SHARPEN_HISTORY
