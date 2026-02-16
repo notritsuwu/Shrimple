@@ -12,7 +12,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec4 color = parameters.sampledColour;
     color.rgb *= parameters.tinting.rgb;
 
-    vec3 localGeoNormal = vec3(
+    vec3 localNormal = vec3(
         uint((parameters.face >> 1) == 2),
         uint((parameters.face >> 1) == 0),
         uint((parameters.face >> 1) == 1)
@@ -24,7 +24,12 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         // TODO
         color.rgb = albedo.rgb;
     #else
-        vec2 lmcoord = LightMapTex(parameters.lightMap);
+        vec2 lmcoord = parameters.lightMap;
+
+        float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
+        lmcoord.y *= sky_lit;
+
+        lmcoord = LightMapTex(lmcoord);
         vec3 lit = textureLod(lightmap, lmcoord, 0).rgb;
         lit = RGBToLinear(lit);
 

@@ -1,3 +1,13 @@
+screen.LIGHTING=Lighting
+
+
+screen.SHADOWS=Shadows
+
+option.SHADOWS_ENABLED=Enabled
+
+option.shadowMapResolution=Resolution
+
+
 screen.TAA=TAA
 
 option.TAA_ENABLED=Enabled
