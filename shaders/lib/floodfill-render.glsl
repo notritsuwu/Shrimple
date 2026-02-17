@@ -17,24 +17,34 @@ vec3 GetFloodFillSamplePos(const in vec3 voxelPos, const in vec3 geoNormal) {
     return geoNormal * 0.5 + voxelPos;
 }
 
-vec3 SampleFloodFill(const in vec3 lpvPos) {
+vec3 _SampleFloodFill(const in vec3 lpvPos) {
     vec3 texcoord = lpvPos / VoxelBufferSize;
 
     vec3 lpvSample = (frameCounter % 2) == 0
         ? textureLod(texFloodFillA, texcoord, 0).rgb
         : textureLod(texFloodFillB, texcoord, 0).rgb;
 
-    lpvSample = RGBToLinear(lpvSample);
+    return RGBToLinear(lpvSample);
+}
 
-//    vec3 lpvSample = (frameCounter % 2) == 0
-//        ? texelFetch(texFloodFillA, ivec3(lpvPos), 0).rgb
-//        : texelFetch(texFloodFillB, ivec3(lpvPos), 0).rgb;
+vec3 SampleFloodFill(const in vec3 lpvPos) {
+    vec3 lpvSample = _SampleFloodFill(lpvPos);
 
     vec3 hsv = RgbToHsv(lpvSample);
-    // hsv.z = max(hsv.z, minBlockLight*0.33);
-    // hsv.z = _pow2(hsv.z);
     hsv.z = hsv.z * (LpvBlockRange/15.0);
     hsv.z = hsv.z*hsv.z*hsv.z * 3.0;
+
+    vec3 rgb = HsvToRgb(hsv);
+
+    return rgb;
+}
+
+vec3 SampleFloodFill(const in vec3 lpvPos, const in float brightness) {
+    vec3 lpvSample = _SampleFloodFill(lpvPos);
+
+    vec3 hsv = RgbToHsv(lpvSample);
+    hsv.z = brightness;
+//    hsv.z = hsv.z*hsv.z*hsv.z * 3.0;
 
     vec3 rgb = HsvToRgb(hsv);
 

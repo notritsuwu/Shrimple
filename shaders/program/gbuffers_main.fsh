@@ -114,7 +114,7 @@ void main() {
     #endif
 
     #if LIGHTING_MODE == LIGHTING_MODE_CUSTOM
-        // TODO
+        // TODO: more fancy, custom lighting
         color.rgb = albedo.rgb;
     #else
         vec2 lmcoord = vIn.lmcoord;
@@ -136,12 +136,7 @@ void main() {
 
         #ifdef LIGHTING_COLORED
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
-            vec3 lpvSample = SampleFloodFill(samplePos);
-
-            vec3 hsv = RgbToHsv(lpvSample);
-            hsv.z = pow(vIn.lmcoord.x, 2.2);
-            lpvSample = HsvToRgb(hsv);
-
+            vec3 lpvSample = SampleFloodFill(samplePos, pow(vIn.lmcoord.x, 2.2));
             lit += lpvFade * lpvSample;
         #endif
 
