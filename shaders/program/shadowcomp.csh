@@ -50,6 +50,7 @@ uniform mat4 gbufferPreviousModelView;
 
 #include "/lib/hsv.glsl"
 #include "/lib/voxel.glsl"
+#include "/lib/blocks.glsl"
 #include "/lib/floodfill.glsl"
 
 //#include "/lib/voxel/lpv/lpv.glsl"
@@ -201,12 +202,20 @@ void main() {
 //    if (blockId > 0u && blockId != 0u)
 //        ParseBlockLpvData(StaticBlockMap[blockId].lpv_data, mixMask, mixWeight);
 
-    #ifdef LPV_GLASS_TINT
-        if (blockId >= BLOCK_HONEY && blockId <= BLOCK_TINTED_GLASS) {
-            tint = GetLightGlassTint(blockId);
-            mixWeight = 1.0;
-        }
-    #endif
+    vec3 lightColor;
+    float lightRange;
+    if (blockId > 0) {
+        ivec2 blockLightUV = ivec2(blockId % 256, blockId / 256);
+        vec4 lightColorRange = texelFetch(texBlockLight, blockLightUV, 0);
+
+        lightColor = RGBToLinear(lightColorRange.rgb);
+        lightRange = lightColorRange.a * 255.0;
+    }
+
+    if (blockId >= BLOCK_HONEY && blockId <= BLOCK_TINTED_GLASS) {
+        tint = lightColor;//GetLightGlassTint(blockId);
+        mixWeight = 1.0;
+    }
 
     if (mixWeight > EPSILON) {
         vec3 lightMixed = mixNeighboursDirect(ivec3(gl_LocalInvocationID), mixMask);
@@ -214,21 +223,11 @@ void main() {
         lightValue += lightMixed;
     }
 
-//    lightValue = vec3(0.0);
-
     if (blockId > 0) {
-        ivec2 blockLightUV = ivec2(blockId % 256, blockId / 256);
-        vec4 lightColorRange = texelFetch(texBlockLight, blockLightUV, 0);
-
-        vec3 lightColor = RGBToLinear(lightColorRange.rgb);
-        float lightRange = lightColorRange.a * 255.0;
-
         vec3 hsv = RgbToHsv(lightColor);
         hsv.z = exp2(lightRange) - 1.0;
         // hsv.z = lightRange / 15.0;
         lightValue += HsvToRgb(hsv);
-
-//        lightValue = vec3(100,0,0);
     }
 
     vec3 hsv = RgbToHsv(lightValue);

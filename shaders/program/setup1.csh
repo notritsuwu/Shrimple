@@ -304,6 +304,76 @@ void main() {
             break;
     }
 
+    switch (blockId) {
+        case BLOCK_HONEY:
+            color = vec4(251, 187, 64, 0);
+            break;
+        case BLOCK_LEAVES:
+        case BLOCK_LEAVES_CHERRY:
+            color = vec4(128, 128, 128, 0);
+            break;
+        case BLOCK_ROOTS:
+            color = vec4(166, 179, 166, 0);
+            break;
+        case BLOCK_SLIME:
+            color = vec4(104, 185, 84, 0);
+            break;
+        case BLOCK_SNOW:
+            color = vec4(96, 139, 158, 0);
+            break;
+        case BLOCK_STAINED_GLASS_BLACK:
+            color = vec4(77, 77, 77, 0);
+            break;
+        case BLOCK_STAINED_GLASS_BLUE:
+            color = vec4(26, 26, 250, 0);
+            break;
+        case BLOCK_STAINED_GLASS_BROWN:
+            color = vec4(144, 99, 38, 0);
+            break;
+        case BLOCK_STAINED_GLASS_CYAN:
+            color = vec4(21, 136, 195, 0);
+            break;
+        case BLOCK_STAINED_GLASS_GRAY:
+            color = vec4(102, 102, 102, 0);
+            break;
+        case BLOCK_STAINED_GLASS_GREEN:
+            color = vec4(32, 206, 21, 0);
+            break;
+        case BLOCK_STAINED_GLASS_LIGHT_BLUE:
+            color = vec4(82, 175, 244, 0);
+            break;
+        case BLOCK_STAINED_GLASS_LIGHT_GRAY:
+            color = vec4(179, 179, 179, 0);
+            break;
+        case BLOCK_STAINED_GLASS_LIME:
+            color = vec4(161, 236, 32, 0);
+            break;
+        case BLOCK_STAINED_GLASS_MAGENTA:
+            color = vec4(178, 76, 216, 0);
+            break;
+        case BLOCK_STAINED_GLASS_ORANGE:
+            color = vec4(234, 149, 47, 0);
+            break;
+        case BLOCK_STAINED_GLASS_PINK:
+            color = vec4(242, 70, 127, 0);
+            break;
+        case BLOCK_STAINED_GLASS_PURPLE:
+            color = vec4(147, 43, 231, 0);
+            break;
+        case BLOCK_STAINED_GLASS_RED:
+            color = vec4(255, 48, 48, 0);
+            break;
+        case BLOCK_STAINED_GLASS_WHITE:
+            color = vec4(245, 245, 245, 0);
+            break;
+        case BLOCK_STAINED_GLASS_YELLOW:
+            color = vec4(246, 246, 31, 0);
+            break;
+        case BLOCK_TINTED_GLASS:
+            color = vec4(51, 26, 51, 0);
+            break;
+    }
+
     color = (color + 0.5) / 255.0;
     imageStore(imgBlockLight, ivec2(gl_GlobalInvocationID.xy), color);
 }

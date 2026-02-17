@@ -136,7 +136,13 @@ void main() {
 
         #ifdef LIGHTING_COLORED
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
-            lit += lpvFade * SampleFloodFill(samplePos);
+            vec3 lpvSample = SampleFloodFill(samplePos);
+
+            vec3 hsv = RgbToHsv(lpvSample);
+            hsv.z = pow(vIn.lmcoord.x, 2.2);
+            lpvSample = HsvToRgb(hsv);
+
+            lit += lpvFade * lpvSample;
         #endif
 
         color.rgb = albedo.rgb * lit;
