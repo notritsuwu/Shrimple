@@ -24,7 +24,9 @@ vec3 SampleFloodFill(const in vec3 lpvPos) {
         ? textureLod(texFloodFillA, texcoord, 0).rgb
         : textureLod(texFloodFillB, texcoord, 0).rgb;
 
-//    vec4 lpvSample = SampleLpvLinear(samplePos);
+//    vec3 lpvSample = (frameCounter % 2) == 0
+//        ? texelFetch(texFloodFillA, ivec3(lpvPos), 0).rgb
+//        : texelFetch(texFloodFillB, ivec3(lpvPos), 0).rgb;
 
     vec3 hsv = RgbToHsv(lpvSample);
     // hsv.z = max(hsv.z, minBlockLight*0.33);

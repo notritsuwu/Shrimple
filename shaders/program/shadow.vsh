@@ -21,6 +21,7 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowModelViewInverse;
 uniform vec3 cameraPosition;
 
+#include "/lib/blocks.glsl"
 #include "/lib/shadows.glsl"
 
 #ifdef LIGHTING_COLORED
@@ -51,7 +52,7 @@ void main() {
         uint blockId = uint(mc_Entity.x + 0.5);
         if (mc_Entity.x < 0.0) blockId = BLOCK_SOLID;
 
-        if (isRenderTerrain && blockId > 0 && (gl_VertexID % 4) == 0) {
+        if (isRenderTerrain && blockId > 0 && blockId != BLOCK_WATER && (gl_VertexID % 4) == 0) {
             vec3 localPos = mul3(shadowModelViewInverse, viewPos);
             vec3 originPos = localPos + at_midBlock.xyz / 64.0;
             ivec3 voxelPos = ivec3(GetVoxelPosition(originPos));

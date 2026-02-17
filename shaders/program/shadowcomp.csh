@@ -84,7 +84,7 @@ vec3 GetLpvValue(const in ivec3 texCoord) {
 }
 
 ivec3 GetVoxelFrameOffset() {
-    return ivec3(0);//ivec3(floor(cameraPosition)) - ivec3(floor(previousCameraPosition));
+    return ivec3(floor(cameraPosition)) - ivec3(floor(previousCameraPosition));
 
 
     vec3 viewDir = gbufferModelViewInverse[2].xyz;
@@ -214,7 +214,7 @@ void main() {
         lightValue += lightMixed;
     }
 
-    lightValue = vec3(0.0);
+//    lightValue = vec3(0.0);
 
     if (blockId > 0) {
         ivec2 blockLightUV = ivec2(blockId % 256, blockId / 256);
