@@ -20,6 +20,11 @@ uniform sampler2D gtexture;
     uniform sampler2D lightmap;
 #endif
 
+#ifdef LIGHTING_COLORED
+    uniform sampler3D texFloodFillA;
+    uniform sampler3D texFloodFillB;
+#endif
+
 #ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
     uniform sampler2DShadow shadowtex1HW;
 #else
@@ -38,10 +43,19 @@ uniform vec3 shadowLightPosition;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
+uniform vec3 cameraPosition;
+uniform int frameCounter;
 
 #include "/lib/oklab.glsl"
+#include "/lib/hsv.glsl"
 #include "/lib/fog.glsl"
 #include "/lib/sampling/lightmap.glsl"
+
+#ifdef LIGHTING_COLORED
+    #include "/lib/voxel.glsl"
+    #include "/lib/floodfill.glsl"
+    #include "/lib/floodfill-render.glsl"
+#endif
 
 #ifdef SHADOWS_ENABLED
     #include "/lib/shadows.glsl"
@@ -94,6 +108,11 @@ void main() {
         shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
 
+    #ifdef LIGHTING_COLORED
+        vec3 voxelPos = GetVoxelPosition(vIn.localPos);
+        float lpvFade = float(IsInVoxelBounds(voxelPos));
+    #endif
+
     #if LIGHTING_MODE == LIGHTING_MODE_CUSTOM
         // TODO
         color.rgb = albedo.rgb;
@@ -107,9 +126,18 @@ void main() {
             lmcoord.y *= sky_lit;
         #endif
 
+        #ifdef LIGHTING_COLORED
+            lmcoord.x *= 1.0 - lpvFade;
+        #endif
+
         lmcoord = LightMapTex(lmcoord);
         vec3 lit = textureLod(lightmap, lmcoord, 0).rgb;
         lit = RGBToLinear(lit);
+
+        #ifdef LIGHTING_COLORED
+            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
+            lit += lpvFade * SampleFloodFill(samplePos);
+        #endif
 
         color.rgb = albedo.rgb * lit;
     #endif

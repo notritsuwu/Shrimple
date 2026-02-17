@@ -5,6 +5,9 @@ const int colortex0Format  = RGBA16F;
 const float sunPathRotation = 0; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10 -5 0 1 2 5 10 15 20 25 30 35 40 45 50 55 60]
 
 #define LIGHTING_MODE 0 // [0 1]
+#define LIGHTING_COLORED
+#define LIGHTING_VOXEL_SIZE 128 // [64 128 256]
+#define LPV_FRUSTUM_OFFSET 0
 
 #define SHADOWS_ENABLED
 const int shadowMapResolution = 1024; // [128 256 512 768 1024 1536 2048 3072 4096 6144 8192]
@@ -13,6 +16,13 @@ const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 4
 #define TAA_ENABLED
 #define TAA_SHARPNESS 50 //[0 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100]
 //#define TAA_SHARPEN_HISTORY
+
+
+const bool shadowHardwareFiltering = true;
+
+#ifdef LIGHTING_COLORED
+    const float voxelDistance = 64.0;
+#endif
 
 
 //#define _rcp(x) (1.0 / (x))
@@ -29,6 +39,10 @@ float minOf(const in vec4 vec) {return min(min(vec[0], vec[1]), min(vec[2], vec[
 
 float maxOf(const in vec2 vec) {return max(vec[0], vec[1]);}
 float maxOf(const in vec3 vec) {return max(max(vec[0], vec[1]), vec[2]);}
+
+int sumOf(ivec2 vec) {return vec.x + vec.y;}
+int sumOf(ivec3 vec) {return vec.x + vec.y + vec.z;}
+float sumOf(vec3 vec) {return vec.x + vec.y + vec.z;}
 
 float RGBToLinear(const in float value) {
     return pow(value, 2.2);

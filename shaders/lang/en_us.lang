@@ -1,5 +1,12 @@
 screen.LIGHTING=Lighting
 
+option.LIGHTING_MODE=Mode
+
+option.LIGHTING_COLORED=Colored
+
+option.LIGHTING_VOXEL_SIZE=Voxel Size
+suffix.LIGHTING_VOXEL_SIZE=m
+
 
 screen.SHADOWS=Shadows
 

@@ -1,4 +1,7 @@
 #define PI 3.1415926538
+#define EPSILON 1e-6
+
+#define BLOCK_SOLID 1
 
 #define LIGHTING_MODE_VANILLA 0
 #define LIGHTING_MODE_CUSTOM 1
