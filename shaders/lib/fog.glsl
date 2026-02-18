@@ -8,7 +8,13 @@ vec3 GetSkyFogColor(const in vec3 skyColor, const in vec3 fogColor, const in flo
     #ifdef WORLD_NETHER
         return fogColor;
     #else
-        float fogF = fogify(max(viewUpF, 0.0), FOG_HORIZON_F);
-        return LabMixLinear(skyColor, fogColor, fogF);
+        #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
+            // TODO
+            float fogF = fogify(max(viewUpF, 0.0), FOG_HORIZON_F);
+            return LabMixLinear(skyColor, fogColor, fogF);
+        #else
+            float fogF = fogify(max(viewUpF, 0.0), FOG_HORIZON_F);
+            return mix(skyColor, fogColor, fogF);
+        #endif
     #endif
 }

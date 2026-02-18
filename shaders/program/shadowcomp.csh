@@ -12,7 +12,11 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 #endif
 
 const float LpvFalloff = 0.998;
+const float LpvBlockRange = 16.0;
 
+
+shared uint voxelSharedData[10*10*10];
+shared vec3 lpvBuffer[10*10*10];
 
 //layout(r16ui) uniform readonly uimage3D imgVoxels;
 
@@ -22,51 +26,17 @@ layout(rgba8) uniform image3D imgFloodFillB;
 uniform usampler3D texVoxels;
 uniform sampler2D texBlockLight;
 
-//#ifdef LIGHTING_FLICKER
-//    uniform sampler2D noisetex;
-//#endif
-
-//uniform float frameTime;
 uniform int frameCounter;
 uniform vec3 cameraPosition;
 uniform vec3 previousCameraPosition;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferPreviousModelView;
 
-//#ifdef ANIM_WORLD_TIME
-//    uniform int worldTime;
-//#else
-//    uniform float frameTimeCounter;
-//#endif
-
-//#include "/lib/blocks.glsl"
-//#include "/lib/lights.glsl"
-
-//#include "/lib/buffers/scene.glsl"
-//#include "/lib/buffers/block_static.glsl"
-//#include "/lib/buffers/block_voxel.glsl"
-//#include "/lib/buffers/light_static.glsl"
-//#include "/lib/buffers/volume.glsl"
-
 #include "/lib/hsv.glsl"
+#include "/lib/oklab.glsl"
 #include "/lib/voxel.glsl"
 #include "/lib/blocks.glsl"
-#include "/lib/floodfill.glsl"
 
-//#include "/lib/voxel/lpv/lpv.glsl"
-//#include "/lib/voxel/lights/mask.glsl"
-//#include "/lib/voxel/blocks.glsl"
-//#include "/lib/lighting/voxel/tinting.glsl"
-
-//#include "/lib/sampling/noise.glsl"
-
-//#ifdef LIGHTING_FLICKER
-//    #include "/lib/utility/anim.glsl"
-//    #include "/lib/lighting/blackbody.glsl"
-//    #include "/lib/lighting/flicker.glsl"
-//#endif
-
-//#include "/lib/lighting/voxel/lights_render.glsl"
 
 vec3 GetLpvValue(const in ivec3 texCoord) {
     if (!IsInVoxelBounds(texCoord)) return vec3(0.0);
@@ -84,28 +54,14 @@ vec3 GetLpvValue(const in ivec3 texCoord) {
     return lpvSample;
 }
 
-ivec3 GetVoxelFrameOffset() {
-    return ivec3(floor(cameraPosition)) - ivec3(floor(previousCameraPosition));
-
-
-    vec3 viewDir = gbufferModelViewInverse[2].xyz;
-    vec3 posNow = GetVoxelCenter(cameraPosition, viewDir);
-
-    vec3 viewDirPrev = vec3(gbufferPreviousModelView[0].z, gbufferPreviousModelView[1].z, gbufferPreviousModelView[2].z);
-    vec3 posPrev = GetVoxelCenter(previousCameraPosition, viewDirPrev);
-
-    vec3 posLast = posNow + (previousCameraPosition - cameraPosition) - (posPrev - posNow);
-
-    return ivec3(posNow) - ivec3(posLast);
-}
-
 const ivec3 lpvFlatten = ivec3(1, 10, 100);
-
-shared uint voxelSharedData[10*10*10];
-shared vec3 lpvBuffer[10*10*10];
 
 int getSharedCoord(const in ivec3 pos) {
     return sumOf(pos * lpvFlatten);
+}
+
+ivec3 GetVoxelFrameOffset() {
+    return ivec3(floor(cameraPosition)) - ivec3(floor(previousCameraPosition));
 }
 
 vec3 sampleShared(const in ivec3 pos, const in int mask_index, out float weight) {
@@ -138,6 +94,15 @@ vec3 mixNeighboursDirect(const in ivec3 fragCoord, const in uint mask) {
     const float wMaxInv = 1.0 / 6.0;//max(sumOf(w1 + w2), 1.0);
     float avgFalloff = wMaxInv * LpvFalloff;
     return (nX1 + nX2 + nY1 + nY2 + nZ1 + nZ2) * avgFalloff;
+
+//    vec3 c1 = LinearToLab(nX1);
+//    vec3 c2 = LinearToLab(nX2);
+//    vec3 c3 = LinearToLab(nY1);
+//    vec3 c4 = LinearToLab(nY2);
+//    vec3 c5 = LinearToLab(nZ1);
+//    vec3 c6 = LinearToLab(nZ2);
+//    vec3 cf = (c1+c2+c3+c4+c5+c6) * avgFalloff;
+//    return LabToLinear(cf);
 }
 
 void PopulateShared() {
@@ -202,14 +167,14 @@ void main() {
 //    if (blockId > 0u && blockId != 0u)
 //        ParseBlockLpvData(StaticBlockMap[blockId].lpv_data, mixMask, mixWeight);
 
-    vec3 lightColor;
-    float lightRange;
-    if (blockId > 0) {
+    vec3 lightColor = vec3(0.0);
+    float lightRange = 0.0;
+    if (blockId > 0 && blockId < 65535) {
         ivec2 blockLightUV = ivec2(blockId % 256, blockId / 256);
         vec4 lightColorRange = texelFetch(texBlockLight, blockLightUV, 0);
 
         lightColor = RGBToLinear(lightColorRange.rgb);
-        lightRange = lightColorRange.a * 255.0;
+        lightRange = lightColorRange.a * 32.0;
     }
 
     if (blockId >= BLOCK_HONEY && blockId <= BLOCK_TINTED_GLASS) {
@@ -223,9 +188,9 @@ void main() {
         lightValue += lightMixed;
     }
 
-    if (blockId > 0) {
+    if (lightRange > 0.0) {
         vec3 hsv = RgbToHsv(lightColor);
-        hsv.z = exp2(lightRange) - 1.0;
+        hsv.z = exp2(lightRange * 0.75) - 1.0;
         // hsv.z = lightRange / 15.0;
         lightValue += HsvToRgb(hsv);
     }

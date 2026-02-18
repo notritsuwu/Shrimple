@@ -4,4 +4,4 @@
 #define RENDER_OPAQUE
 
 #include "overworld.glsl"
-#include "/program/gbuffers_hand.vsh"
+#include "/program/gbuffers_main.vsh"

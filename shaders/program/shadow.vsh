@@ -52,7 +52,11 @@ void main() {
         uint blockId = uint(mc_Entity.x + 0.5);
         if (mc_Entity.x < 0.0) blockId = BLOCK_SOLID;
 
-        if (isRenderTerrain && blockId > 0 && blockId != BLOCK_WATER && (gl_VertexID % 4) == 0) {
+        bool ignoreBlock = blockId < 0
+            || blockId == BLOCK_WATER
+            || blockId == BLOCK_IGNORED;
+
+        if (isRenderTerrain && !ignoreBlock && (gl_VertexID % 4) == 0) {
             vec3 localPos = mul3(shadowModelViewInverse, viewPos);
             vec3 originPos = localPos + at_midBlock.xyz / 64.0;
             ivec3 voxelPos = ivec3(GetVoxelPosition(originPos));

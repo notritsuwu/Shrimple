@@ -29,14 +29,14 @@ vec3 _SampleFloodFill(const in vec3 lpvPos) {
 
 vec3 SampleFloodFill(const in vec3 lpvPos) {
     vec3 lpvSample = _SampleFloodFill(lpvPos);
+    return lpvSample;
 
-    vec3 hsv = RgbToHsv(lpvSample);
-    hsv.z = hsv.z * (LpvBlockRange/15.0);
-    hsv.z = hsv.z*hsv.z*hsv.z * 3.0;
-
-    vec3 rgb = HsvToRgb(hsv);
-
-    return rgb;
+//    vec3 hsv = RgbToHsv(lpvSample);
+////    hsv.z = hsv.z * (LpvBlockRange/15.0);
+//    hsv.z = hsv.z*hsv.z * 2.0;
+//    vec3 rgb = HsvToRgb(hsv);
+//
+//    return rgb;
 }
 
 vec3 SampleFloodFill(const in vec3 lpvPos, const in float brightness) {

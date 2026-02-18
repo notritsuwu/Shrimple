@@ -6,6 +6,7 @@ const float sunPathRotation = 0; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10
 
 #define LIGHTING_MODE 0 // [0 1]
 #define LIGHTING_COLORED
+#define LIGHTING_COLORED_CANDLES
 #define LIGHTING_VOXEL_SIZE 128 // [64 128 256]
 #define LPV_FRUSTUM_OFFSET 0
 
@@ -26,6 +27,8 @@ const bool shadowHardwareFiltering = true;
 
 
 //#define _rcp(x) (1.0 / (x))
+#define _pow2(x) (x*x)
+#define _pow3(x) (x*x*x)
 #define _saturate(x) (clamp(x, 0.0, 1.0))
 
 float saturate(const in float x) {return _saturate(x);}

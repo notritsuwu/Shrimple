@@ -10,370 +10,766 @@ layout(rgba8) uniform writeonly image2D imgBlockLight;
 #include "/lib/blocks.glsl"
 
 
-#define color_White 255, 255, 255
-#define color_Amethyst 118, 58, 201
-#define color_Candle 230, 144, 76
-#define color_CopperBulb 230, 204, 128
-#define color_Fire 220, 152, 89
-#define color_Furnace 196, 159, 114
-#define color_RedstoneTorch 239, 78, 42
-#define color_RespawnAnchor 99, 17, 165
-#define color_SeaPickle 72, 100, 54
-#define color_SoulFire 25, 184, 229
+const vec3 color_White = vec3(255);
+const vec3 color_Amethyst = vec3(118, 58, 201);
+const vec3 color_Candle = vec3(230, 144, 76);
+const vec3 color_CopperBulb = vec3(230, 204, 128);
+const vec3 color_Fire = vec3(220, 152, 89);
+const vec3 color_Furnace = vec3(196, 159, 114);
+const vec3 color_RedstoneTorch = vec3(232, 59, 21);
+const vec3 color_RespawnAnchor = vec3(99, 17, 165);
+const vec3 color_SeaPickle = vec3(72, 100, 54);
+const vec3 color_SoulFire = vec3(25, 184, 229);
+
+const vec3 color_CandleBlack = vec3(51, 51, 51);
+const vec3 color_CandleBlue = vec3(0, 66, 255);
+const vec3 color_CandleBrown = vec3(117, 67, 38);
+const vec3 color_CandleCyan = vec3(0, 214, 214);
+const vec3 color_CandleGray = vec3(84, 91, 99);
+const vec3 color_CandleGreen = vec3(67, 115, 0);
+const vec3 color_CandleLightBlue = vec3(39, 175, 255);
+const vec3 color_CandleLightGray = vec3(161, 160, 159);
+const vec3 color_CandleLime = vec3(112, 227, 0);
+const vec3 color_CandleMagenta = vec3(193, 25, 207);
+const vec3 color_CandleOrange = vec3(255, 117, 0);
+const vec3 color_CandlePink = vec3(255, 141, 183);
+const vec3 color_CandlePurple = vec3(145, 0, 255);
+const vec3 color_CandleRed = vec3(219, 0, 0);
+const vec3 color_CandleYellow = vec3(255, 224, 0);
 
 
 void main() {
     uint blockId = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * 256u;
-    vec4 color = vec4(0.0); // [RGB][range]
+    vec3 color = vec3(0.0);
+    float range = 0.0;
 
     switch (blockId) {
         case BLOCK_LIGHT_1:
-            color = vec4(color_White, 1);
+            color = color_White;
+            range = 1;
             break;
         case BLOCK_LIGHT_2:
-            color = vec4(color_White, 2);
+            color = color_White;
+            range = 2;
             break;
         case BLOCK_LIGHT_3:
-            color = vec4(color_White, 3);
+            color = color_White;
+            range = 3;
             break;
         case BLOCK_LIGHT_4:
-            color = vec4(color_White, 4);
+            color = color_White;
+            range = 4;
             break;
         case BLOCK_LIGHT_5:
-            color = vec4(color_White, 5);
+            color = color_White;
+            range = 5;
             break;
         case BLOCK_LIGHT_6:
-            color = vec4(color_White, 6);
+            color = color_White;
+            range = 6;
             break;
         case BLOCK_LIGHT_7:
-            color = vec4(color_White, 7);
+            color = color_White;
+            range = 7;
             break;
         case BLOCK_LIGHT_8:
-            color = vec4(color_White, 8);
+            color = color_White;
+            range = 8;
             break;
         case BLOCK_LIGHT_9:
-            color = vec4(color_White, 9);
+            color = color_White;
+            range = 9;
             break;
         case BLOCK_LIGHT_10:
-            color = vec4(color_White, 10);
+            color = color_White;
+            range = 10;
             break;
         case BLOCK_LIGHT_11:
-            color = vec4(color_White, 11);
+            color = color_White;
+            range = 11;
             break;
         case BLOCK_LIGHT_12:
-            color = vec4(color_White, 12);
+            color = color_White;
+            range = 12;
             break;
         case BLOCK_LIGHT_13:
-            color = vec4(color_White, 13);
+            color = color_White;
+            range = 13;
             break;
         case BLOCK_LIGHT_14:
-            color = vec4(color_White, 14);
+            color = color_White;
+            range = 14;
             break;
         case BLOCK_LIGHT_15:
-            color = vec4(color_White, 15);
+            color = color_White;
+            range = 15;
             break;
         case BLOCK_AMETHYST_BUD_LARGE:
-            color = vec4(color_Amethyst, 4);
+            color = color_Amethyst;
+            range = 4;
             break;
         case BLOCK_AMETHYST_BUD_MEDIUM:
-            color = vec4(color_Amethyst, 2);
+            color = color_Amethyst;
+            range = 2;
             break;
         case BLOCK_AMETHYST_CLUSTER:
-            color = vec4(color_Amethyst, 5);
+            color = color_Amethyst;
+            range = 5;
             break;
         case BLOCK_BEACON:
-            color = vec4(color_White, 15);
+            color = color_White;
+            range = 15;
             break;
         case BLOCK_BLAST_FURNACE_LIT_N:
         case BLOCK_BLAST_FURNACE_LIT_E:
         case BLOCK_BLAST_FURNACE_LIT_S:
         case BLOCK_BLAST_FURNACE_LIT_W:
-            color = vec4(color_Furnace, 6);
+            color = color_Furnace;
+            range = 6;
             break;
         case BLOCK_BREWING_STAND:
-            color = vec4(color_Furnace, 2);
+            color = color_Furnace;
+            range = 2;
             break;
         case BLOCK_CANDLE_CAKE:
-            color = vec4(color_Candle, 3);
+            color = color_Candle;
+            range = 3;
             break;
         case BLOCK_CAVEVINE_BERRIES:
-            color = vec4(230, 120, 30, 14);
+            color = vec3(230, 120, 30);
+            range = 14;
             break;
         case BLOCK_COPPER_BULB_LIT:
-            color = vec4(color_CopperBulb, 15);
+            color = color_CopperBulb;
+            range = 15;
             break;
         case BLOCK_COPPER_BULB_EXPOSED_LIT:
-            color = vec4(color_CopperBulb, 12);
+            color = color_CopperBulb;
+            range = 12;
             break;
         case BLOCK_COPPER_BULB_OXIDIZED_LIT:
-            color = vec4(color_CopperBulb, 4);
+            color = color_CopperBulb;
+            range = 4;
             break;
         case BLOCK_COPPER_BULB_WEATHERED_LIT:
-            color = vec4(color_CopperBulb, 8);
+            color = color_CopperBulb;
+            range = 8;
             break;
         case BLOCK_COPPER_TORCH_FLOOR:
         case BLOCK_COPPER_TORCH_WALL_N:
         case BLOCK_COPPER_TORCH_WALL_E:
         case BLOCK_COPPER_TORCH_WALL_S:
         case BLOCK_COPPER_TORCH_WALL_W:
-            color = vec4(126, 230, 25, 14);
+            color = vec3(126, 230, 25);
+            range = 14;
             break;
         case BLOCK_CREAKING_HEART:
-            color = vec4(230, 128, 47, 8);
+            color = vec3(230, 128, 47);
+            range = 8;
             break;
         case BLOCK_EYEBLOSSOM_OPEN:
-            color = vec4(230, 128, 47, 2);
+            color = vec3(230, 128, 47);
+            range = 2;
             break;
         case BLOCK_CRYING_OBSIDIAN:
-            color = vec4(99, 17, 165, 10);
+            color = vec3(99, 17, 165);
+            range = 10;
             break;
         case BLOCK_END_ROD:
-            color = vec4(244, 237, 223, 14);
+            color = vec3(244, 237, 223);
+            range = 14;
             break;
         case BLOCK_CAMPFIRE_N_S:
         case BLOCK_CAMPFIRE_W_E:
         case BLOCK_FIRE:
-            color = vec4(color_Fire, 15);
+            color = color_Fire;
+            range = 15;
             break;
         case BLOCK_FROGLIGHT_OCHRE:
-            color = vec4(196, 165, 28, 15);
+            color = vec3(196, 165, 28);
+            range = 15;
             break;
         case BLOCK_FROGLIGHT_PEARLESCENT:
-            color = vec4(188, 111, 168, 15);
+            color = vec3(188, 111, 168);
+            range = 15;
             break;
         case BLOCK_FROGLIGHT_VERDANT:
-            color = vec4(118, 195, 104, 15);
+            color = vec3(118, 195, 104);
+            range = 15;
             break;
         case BLOCK_FURNACE_LIT_N:
         case BLOCK_FURNACE_LIT_E:
         case BLOCK_FURNACE_LIT_S:
         case BLOCK_FURNACE_LIT_W:
-            color = vec4(color_Furnace, 6);
+            color = color_Furnace;
+            range = 6;
             break;
         case BLOCK_GLOWSTONE:
-            color = vec4(190, 151, 83, 15);
+            color = vec3(190, 151, 83);
+            range = 15;
             break;
 //        case BLOCK_GLOWSTONE_DUST:
 //            color = vec4(190, 151, 83, 6);
 //            break;
         case BLOCK_GLOW_LICHEN:
-            color = vec4(87, 184, 110, 7);
+            color = vec3(87, 184, 110);
+            range = 7;
             break;
         case BLOCK_JACK_O_LANTERN_N:
         case BLOCK_JACK_O_LANTERN_E:
         case BLOCK_JACK_O_LANTERN_S:
         case BLOCK_JACK_O_LANTERN_W:
-            color = vec4(196, 179, 83, 15);
+            color = vec3(196, 179, 83);
+            range = 15;
             break;
         case BLOCK_LANTERN_CEIL:
         case BLOCK_LANTERN_FLOOR:
-            color = vec4(231, 188, 115, 12);
+            color = vec3(231, 188, 115);
+            range = 12;
             break;
         case BLOCK_LAVA:
-            color = vec4(245, 117, 66, 15);
+            color = vec3(245, 117, 66);
+            range = 15;
             break;
         case BLOCK_LIGHTING_ROD_POWERED:
-            color = vec4(222, 244, 249, 8);
+            color = vec3(222, 244, 249);
+            range = 8;
             break;
         case BLOCK_MAGMA:
-            color = vec4(190, 82, 28, 3);
+            color = vec3(190, 82, 28);
+            range = 3;
             break;
         case BLOCK_NETHER_PORTAL:
-            color = vec4(128, 42, 212, 11);
+            color = vec3(128, 42, 212);
+            range = 11;
             break;
         case BLOCK_REDSTONE_LAMP_LIT:
-            color = vec4(243, 203, 126, 15);
+            color = vec3(243, 203, 126);
+            range = 15;
             break;
         case BLOCK_REDSTONE_ORE_LIT:
-            color = vec4(color_RedstoneTorch, 9);
+            color = color_RedstoneTorch;
+            range = 9;
             break;
         case BLOCK_REDSTONE_TORCH_FLOOR_LIT:
         case BLOCK_REDSTONE_TORCH_WALL_N_LIT:
         case BLOCK_REDSTONE_TORCH_WALL_E_LIT:
         case BLOCK_REDSTONE_TORCH_WALL_S_LIT:
         case BLOCK_REDSTONE_TORCH_WALL_W_LIT:
-            color = vec4(color_RedstoneTorch, 7);
+            color = color_RedstoneTorch;
+            range = 7;
             break;
         case BLOCK_REDSTONE_WIRE_1:
-            color = vec4(color_RedstoneTorch, 1.0);
+            color = color_RedstoneTorch;
+            range = 1.0;
             break;
         case BLOCK_REDSTONE_WIRE_2:
-            color = vec4(color_RedstoneTorch, 1.5);
+            color = color_RedstoneTorch;
+            range = 1.5;
             break;
         case BLOCK_REDSTONE_WIRE_3:
-            color = vec4(color_RedstoneTorch, 2.0);
+            color = color_RedstoneTorch;
+            range = 2.0;
             break;
         case BLOCK_REDSTONE_WIRE_4:
-            color = vec4(color_RedstoneTorch, 2.5);
+            color = color_RedstoneTorch;
+            range = 2.5;
             break;
         case BLOCK_REDSTONE_WIRE_5:
-            color = vec4(color_RedstoneTorch, 3.0);
+            color = color_RedstoneTorch;
+            range = 3.0;
             break;
         case BLOCK_REDSTONE_WIRE_6:
-            color = vec4(color_RedstoneTorch, 3.5);
+            color = color_RedstoneTorch;
+            range = 3.5;
             break;
         case BLOCK_REDSTONE_WIRE_7:
-            color = vec4(color_RedstoneTorch, 4.0);
+            color = color_RedstoneTorch;
+            range = 4.0;
             break;
         case BLOCK_REDSTONE_WIRE_8:
-            color = vec4(color_RedstoneTorch, 4.5);
+            color = color_RedstoneTorch;
+            range = 4.5;
             break;
         case BLOCK_REDSTONE_WIRE_9:
-            color = vec4(color_RedstoneTorch, 5.0);
+            color = color_RedstoneTorch;
+            range = 5.0;
             break;
         case BLOCK_REDSTONE_WIRE_10:
-            color = vec4(color_RedstoneTorch, 5.5);
+            color = color_RedstoneTorch;
+            range = 5.5;
             break;
         case BLOCK_REDSTONE_WIRE_11:
-            color = vec4(color_RedstoneTorch, 6.0);
+            color = color_RedstoneTorch;
+            range = 6.0;
             break;
         case BLOCK_REDSTONE_WIRE_12:
-            color = vec4(color_RedstoneTorch, 6.5);
+            color = color_RedstoneTorch;
+            range = 6.5;
             break;
         case BLOCK_REDSTONE_WIRE_13:
-            color = vec4(color_RedstoneTorch, 7.0);
+            color = color_RedstoneTorch;
+            range = 7.0;
             break;
         case BLOCK_REDSTONE_WIRE_14:
-            color = vec4(color_RedstoneTorch, 7.5);
+            color = color_RedstoneTorch;
+            range = 7.5;
             break;
         case BLOCK_REDSTONE_WIRE_15:
-            color = vec4(color_RedstoneTorch, 8.0);
+            color = color_RedstoneTorch;
+            range = 8.0;
             break;
         case BLOCK_REPEATER:
-            color = vec4(color_RedstoneTorch, 7);
+            color = color_RedstoneTorch;
+            range = 7;
             break;
         case BLOCK_RESPAWN_ANCHOR_1:
-            color = vec4(color_RespawnAnchor, 3);
+            color = color_RespawnAnchor;
+            range = 3;
             break;
         case BLOCK_RESPAWN_ANCHOR_2:
-            color = vec4(color_RespawnAnchor, 7);
+            color = color_RespawnAnchor;
+            range = 7;
             break;
         case BLOCK_RESPAWN_ANCHOR_3:
-            color = vec4(color_RespawnAnchor, 11);
+            color = color_RespawnAnchor;
+            range = 11;
             break;
         case BLOCK_RESPAWN_ANCHOR_4:
-            color = vec4(color_RespawnAnchor, 15);
+            color = color_RespawnAnchor;
+            range = 15;
             break;
         case BLOCK_SCULK_CATALYST:
-            color = vec4(46, 91, 94, 6);
+            color = vec3(46, 91, 94);
+            range = 6;
             break;
         case BLOCK_SEA_LANTERN:
-            color = vec4(141, 191, 219, 15);
+            color = vec3(141, 191, 219);
+            range = 15;
             break;
         case BLOCK_SEA_PICKLE_WET_1:
-            color = vec4(color_SeaPickle, 6);
+            color = color_SeaPickle;
+            range = 6;
             break;
         case BLOCK_SEA_PICKLE_WET_2:
-            color = vec4(color_SeaPickle, 9);
+            color = color_SeaPickle;
+            range = 9;
             break;
         case BLOCK_SEA_PICKLE_WET_3:
-            color = vec4(color_SeaPickle, 12);
+            color = color_SeaPickle;
+            range = 12;
             break;
         case BLOCK_SEA_PICKLE_WET_4:
-            color = vec4(color_SeaPickle, 15);
+            color = color_SeaPickle;
+            range = 15;
             break;
         case BLOCK_SHROOMLIGHT:
-            color = vec4(216, 120, 52, 15);
+            color = vec3(216, 120, 52);
+            range = 15;
             break;
         case BLOCK_SMOKER_LIT_N:
         case BLOCK_SMOKER_LIT_E:
         case BLOCK_SMOKER_LIT_S:
         case BLOCK_SMOKER_LIT_W:
-            color = vec4(color_Furnace, 6);
+            color = color_Furnace;
+            range = 6;
             break;
         case BLOCK_SOUL_CAMPFIRE_LIT_N_S:
         case BLOCK_SOUL_CAMPFIRE_LIT_W_E:
         case BLOCK_SOUL_FIRE:
         case BLOCK_SOUL_LANTERN_CEIL:
         case BLOCK_SOUL_LANTERN_FLOOR:
-            color = vec4(color_SoulFire, 12);
+            color = color_SoulFire;
+            range = 12;
             break;
         case BLOCK_SOUL_TORCH_FLOOR:
         case BLOCK_SOUL_TORCH_WALL_N:
         case BLOCK_SOUL_TORCH_WALL_E:
         case BLOCK_SOUL_TORCH_WALL_S:
         case BLOCK_SOUL_TORCH_WALL_W:
-            color = vec4(color_SoulFire, 10);
+            color = color_SoulFire;
+            range = 10;
             break;
         case BLOCK_TORCH_FLOOR:
         case BLOCK_TORCH_WALL_N:
         case BLOCK_TORCH_WALL_E:
         case BLOCK_TORCH_WALL_S:
         case BLOCK_TORCH_WALL_W:
-            color = vec4(245, 117, 66, 12);
+            color = vec3(245, 117, 66);
+            range = 12;
             break;
     }
 
     switch (blockId) {
         case BLOCK_HONEY:
-            color = vec4(251, 187, 64, 0);
+            color = vec3(251, 187, 64);
             break;
         case BLOCK_LEAVES:
         case BLOCK_LEAVES_CHERRY:
-            color = vec4(128, 128, 128, 0);
+            color = vec3(128, 128, 128);
             break;
         case BLOCK_ROOTS:
-            color = vec4(166, 179, 166, 0);
+            color = vec3(166, 179, 166);
             break;
         case BLOCK_SLIME:
-            color = vec4(104, 185, 84, 0);
+            color = vec3(104, 185, 84);
             break;
         case BLOCK_SNOW:
-            color = vec4(96, 139, 158, 0);
+            color = vec3(96, 139, 158);
             break;
         case BLOCK_STAINED_GLASS_BLACK:
-            color = vec4(77, 77, 77, 0);
+            color = vec3(77, 77, 77);
             break;
         case BLOCK_STAINED_GLASS_BLUE:
-            color = vec4(26, 26, 250, 0);
+            color = vec3(26, 26, 250);
             break;
         case BLOCK_STAINED_GLASS_BROWN:
-            color = vec4(144, 99, 38, 0);
+            color = vec3(144, 99, 38);
             break;
         case BLOCK_STAINED_GLASS_CYAN:
-            color = vec4(21, 136, 195, 0);
+            color = vec3(21, 136, 195);
             break;
         case BLOCK_STAINED_GLASS_GRAY:
-            color = vec4(102, 102, 102, 0);
+            color = vec3(102, 102, 102);
             break;
         case BLOCK_STAINED_GLASS_GREEN:
-            color = vec4(32, 206, 21, 0);
+            color = vec3(32, 206, 21);
             break;
         case BLOCK_STAINED_GLASS_LIGHT_BLUE:
-            color = vec4(82, 175, 244, 0);
+            color = vec3(82, 175, 244);
             break;
         case BLOCK_STAINED_GLASS_LIGHT_GRAY:
-            color = vec4(179, 179, 179, 0);
+            color = vec3(179, 179, 179);
             break;
         case BLOCK_STAINED_GLASS_LIME:
-            color = vec4(161, 236, 32, 0);
+            color = vec3(161, 236, 32);
             break;
         case BLOCK_STAINED_GLASS_MAGENTA:
-            color = vec4(178, 76, 216, 0);
+            color = vec3(178, 76, 216);
             break;
         case BLOCK_STAINED_GLASS_ORANGE:
-            color = vec4(234, 149, 47, 0);
+            color = vec3(234, 149, 47);
             break;
         case BLOCK_STAINED_GLASS_PINK:
-            color = vec4(242, 70, 127, 0);
+            color = vec3(242, 70, 127);
             break;
         case BLOCK_STAINED_GLASS_PURPLE:
-            color = vec4(147, 43, 231, 0);
+            color = vec3(147, 43, 231);
             break;
         case BLOCK_STAINED_GLASS_RED:
-            color = vec4(255, 48, 48, 0);
+            color = vec3(255, 48, 48);
             break;
         case BLOCK_STAINED_GLASS_WHITE:
-            color = vec4(245, 245, 245, 0);
+            color = vec3(245, 245, 245);
             break;
         case BLOCK_STAINED_GLASS_YELLOW:
-            color = vec4(246, 246, 31, 0);
+            color = vec3(246, 246, 31);
             break;
         case BLOCK_TINTED_GLASS:
-            color = vec4(51, 26, 51, 0);
+            color = vec3(51, 26, 51);
             break;
+
+//        case BLOCK_CANDLE_CAKE_LIT:
+//            lightType = LIGHT_CANDLE_CAKE;
+//            break;
+//        case BLOCK_CANDLE_HOLDER_LIT_1:
+//        lightType = LIGHT_CANDLES_1;
+//        break;
+//        case BLOCK_CANDLE_HOLDER_LIT_2:
+//        lightType = LIGHT_CANDLES_2;
+//        break;
+//        case BLOCK_CANDLE_HOLDER_LIT_3:
+//        lightType = LIGHT_CANDLES_3;
+//        break;
+//        case BLOCK_CANDLE_HOLDER_LIT_4:
+//        lightType = LIGHT_CANDLES_4;
+//        break;
+//        case BLOCK_CAULDRON_LAVA:
+//            lightType = LIGHT_LAVA_CAULDRON;
+//            break;
     }
 
-    color = (color + 0.5) / 255.0;
-    imageStore(imgBlockLight, ivec2(gl_GlobalInvocationID.xy), color);
+    #ifdef LIGHTING_COLORED_CANDLES
+        switch (blockId) {
+            case BLOCK_BLACK_CANDLES_LIT_1:
+                color = color_CandleBlack;
+                range = 3;
+                break;
+            case BLOCK_BLACK_CANDLES_LIT_2:
+                color = color_CandleBlack;
+                range = 6;
+                break;
+            case BLOCK_BLACK_CANDLES_LIT_3:
+                color = color_CandleBlack;
+                range = 9;
+                break;
+            case BLOCK_BLACK_CANDLES_LIT_4:
+                color = color_CandleBlack;
+                range = 12;
+                break;
+            case BLOCK_BLUE_CANDLES_LIT_1:
+                color = color_CandleBlue;
+                range = 3;
+                break;
+            case BLOCK_BLUE_CANDLES_LIT_2:
+                color = color_CandleBlue;
+                range = 6;
+                break;
+            case BLOCK_BLUE_CANDLES_LIT_3:
+                color = color_CandleBlue;
+                range = 9;
+                break;
+            case BLOCK_BLUE_CANDLES_LIT_4:
+                color = color_CandleBlue;
+                range = 12;
+                break;
+            case BLOCK_BROWN_CANDLES_LIT_1:
+                color = color_CandleBrown;
+                range = 3;
+                break;
+            case BLOCK_BROWN_CANDLES_LIT_2:
+                color = color_CandleBrown;
+                range = 6;
+                break;
+            case BLOCK_BROWN_CANDLES_LIT_3:
+                color = color_CandleBrown;
+                range = 9;
+                break;
+            case BLOCK_BROWN_CANDLES_LIT_4:
+                color = color_CandleBrown;
+                range = 12;
+                break;
+            case BLOCK_CYAN_CANDLES_LIT_1:
+                color = color_CandleCyan;
+                range = 3;
+                break;
+            case BLOCK_CYAN_CANDLES_LIT_2:
+                color = color_CandleCyan;
+                range = 6;
+                break;
+            case BLOCK_CYAN_CANDLES_LIT_3:
+                color = color_CandleCyan;
+                range = 9;
+                break;
+            case BLOCK_CYAN_CANDLES_LIT_4:
+                color = color_CandleCyan;
+                range = 12;
+                break;
+            case BLOCK_GRAY_CANDLES_LIT_1:
+                color = color_CandleGray;
+                range = 3;
+                break;
+            case BLOCK_GRAY_CANDLES_LIT_2:
+                color = color_CandleGray;
+                range = 6;
+                break;
+            case BLOCK_GRAY_CANDLES_LIT_3:
+                color = color_CandleGray;
+                range = 9;
+                break;
+            case BLOCK_GRAY_CANDLES_LIT_4:
+                color = color_CandleGray;
+                range = 12;
+                break;
+            case BLOCK_GREEN_CANDLES_LIT_1:
+                color = color_CandleGreen;
+                range = 3;
+                break;
+            case BLOCK_GREEN_CANDLES_LIT_2:
+                color = color_CandleGreen;
+                range = 6;
+                break;
+            case BLOCK_GREEN_CANDLES_LIT_3:
+                color = color_CandleGreen;
+                range = 9;
+                break;
+            case BLOCK_GREEN_CANDLES_LIT_4:
+                color = color_CandleGreen;
+                range = 12;
+                break;
+            case BLOCK_LIGHT_BLUE_CANDLES_LIT_1:
+                color = color_CandleLightBlue;
+                range = 3;
+                break;
+            case BLOCK_LIGHT_BLUE_CANDLES_LIT_2:
+                color = color_CandleLightBlue;
+                range = 6;
+                break;
+            case BLOCK_LIGHT_BLUE_CANDLES_LIT_3:
+                color = color_CandleLightBlue;
+                range = 9;
+                break;
+            case BLOCK_LIGHT_BLUE_CANDLES_LIT_4:
+                color = color_CandleLightBlue;
+                range = 12;
+                break;
+            case BLOCK_LIGHT_GRAY_CANDLES_LIT_1:
+                color = color_CandleLightGray;
+                range = 3;
+                break;
+            case BLOCK_LIGHT_GRAY_CANDLES_LIT_2:
+                color = color_CandleLightGray;
+                range = 6;
+                break;
+            case BLOCK_LIGHT_GRAY_CANDLES_LIT_3:
+                color = color_CandleLightGray;
+                range = 9;
+                break;
+            case BLOCK_LIGHT_GRAY_CANDLES_LIT_4:
+                color = color_CandleLightGray;
+                range = 12;
+                break;
+            case BLOCK_LIME_CANDLES_LIT_1:
+                color = color_CandleLime;
+                range = 3;
+                break;
+            case BLOCK_LIME_CANDLES_LIT_2:
+                color = color_CandleLime;
+                range = 6;
+                break;
+            case BLOCK_LIME_CANDLES_LIT_3:
+                color = color_CandleLime;
+                range = 9;
+                break;
+            case BLOCK_LIME_CANDLES_LIT_4:
+                color = color_CandleLime;
+                range = 12;
+                break;
+            case BLOCK_MAGENTA_CANDLES_LIT_1:
+                color = color_CandleMagenta;
+                range = 3;
+                break;
+            case BLOCK_MAGENTA_CANDLES_LIT_2:
+                color = color_CandleMagenta;
+                range = 6;
+                break;
+            case BLOCK_MAGENTA_CANDLES_LIT_3:
+                color = color_CandleMagenta;
+                range = 9;
+                break;
+            case BLOCK_MAGENTA_CANDLES_LIT_4:
+                color = color_CandleMagenta;
+                range = 12;
+                break;
+            case BLOCK_ORANGE_CANDLES_LIT_1:
+                color = color_CandleOrange;
+                range = 3;
+                break;
+            case BLOCK_ORANGE_CANDLES_LIT_2:
+                color = color_CandleOrange;
+                range = 6;
+                break;
+            case BLOCK_ORANGE_CANDLES_LIT_3:
+                color = color_CandleOrange;
+                range = 9;
+                break;
+            case BLOCK_ORANGE_CANDLES_LIT_4:
+                color = color_CandleOrange;
+                range = 12;
+                break;
+            case BLOCK_PINK_CANDLES_LIT_1:
+                color = color_CandlePink;
+                range = 3;
+                break;
+            case BLOCK_PINK_CANDLES_LIT_2:
+                color = color_CandlePink;
+                range = 6;
+                break;
+            case BLOCK_PINK_CANDLES_LIT_3:
+                color = color_CandlePink;
+                range = 9;
+                break;
+            case BLOCK_PINK_CANDLES_LIT_4:
+                color = color_CandlePink;
+                range = 12;
+                break;
+            case BLOCK_PURPLE_CANDLES_LIT_1:
+                color = color_CandlePurple;
+                range = 3;
+                break;
+            case BLOCK_PURPLE_CANDLES_LIT_2:
+                color = color_CandlePurple;
+                range = 6;
+                break;
+            case BLOCK_PURPLE_CANDLES_LIT_3:
+                color = color_CandlePurple;
+                range = 9;
+                break;
+            case BLOCK_PURPLE_CANDLES_LIT_4:
+                color = color_CandlePurple;
+                range = 12;
+                break;
+            case BLOCK_RED_CANDLES_LIT_1:
+                color = color_CandleRed;
+                range = 3;
+                break;
+            case BLOCK_RED_CANDLES_LIT_2:
+                color = color_CandleRed;
+                range = 6;
+                break;
+            case BLOCK_RED_CANDLES_LIT_3:
+                color = color_CandleRed;
+                range = 9;
+                break;
+            case BLOCK_RED_CANDLES_LIT_4:
+                color = color_CandleRed;
+                range = 12;
+                break;
+            case BLOCK_WHITE_CANDLES_LIT_1:
+                color = color_White;
+                range = 3;
+                break;
+            case BLOCK_WHITE_CANDLES_LIT_2:
+                color = color_White;
+                range = 6;
+                break;
+            case BLOCK_WHITE_CANDLES_LIT_3:
+                color = color_White;
+                range = 9;
+                break;
+            case BLOCK_WHITE_CANDLES_LIT_4:
+                color = color_White;
+                range = 12;
+                break;
+            case BLOCK_YELLOW_CANDLES_LIT_1:
+                color = color_CandleYellow;
+                range = 3;
+                break;
+            case BLOCK_YELLOW_CANDLES_LIT_2:
+                color = color_CandleYellow;
+                range = 6;
+                break;
+            case BLOCK_YELLOW_CANDLES_LIT_3:
+                color = color_CandleYellow;
+                range = 9;
+                break;
+            case BLOCK_YELLOW_CANDLES_LIT_4:
+                color = color_CandleYellow;
+                range = 12;
+                break;
+        }
+    #else
+        switch (lightType) {
+            case BLOCK_CANDLES_LIT_1:
+                color = color_Candle;
+                range = 3;
+                break;
+            case BLOCK_CANDLES_LIT_2:
+                color = color_Candle;
+                range = 6;
+                break;
+            case BLOCK_CANDLES_LIT_3:
+                color = color_Candle;
+                range = 9;
+                break;
+            case BLOCK_CANDLES_LIT_4:
+                color = color_Candle;
+                range = 12;
+                break;
+        }
+    #endif
+
+    // TODO: pre-add 0.5?
+    vec4 data = vec4(color / 255.0, range / 32.0);
+    imageStore(imgBlockLight, ivec2(gl_GlobalInvocationID.xy), data);
 }

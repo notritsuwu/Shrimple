@@ -39,6 +39,7 @@ uniform float fogEnd;
 uniform vec3 skyColor;
 uniform vec4 entityColor;
 uniform float alphaTestRef;
+uniform vec3 sunPosition;
 uniform vec3 shadowLightPosition;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowModelView;
@@ -53,7 +54,6 @@ uniform int frameCounter;
 
 #ifdef LIGHTING_COLORED
     #include "/lib/voxel.glsl"
-    #include "/lib/floodfill.glsl"
     #include "/lib/floodfill-render.glsl"
 #endif
 
@@ -76,7 +76,11 @@ void main() {
         if (color.a < alphaTestRef) discard;
     #endif
 
-	color *= vIn.color;
+    #if defined(RENDER_TERRAIN) && LIGHTING_MODE == LIGHTING_MODE_ENHANCED
+        color.rgb *= vIn.color.rgb;
+    #else
+        color *= vIn.color;
+    #endif
 
     #ifdef RENDER_ENTITY
         color.rgb = mix(color.rgb, entityColor.rgb, entityColor.a);
@@ -85,6 +89,8 @@ void main() {
     vec3 albedo = RGBToLinear(color.rgb);
     float viewDist = length(vIn.localPos);
     vec3 localNormal = normalize(vIn.localNormal);
+
+    vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
 
     float shadow = 1.0;
     #ifdef SHADOWS_ENABLED
@@ -102,23 +108,43 @@ void main() {
             shadow = step(shadowPos.z, shadowDepth);
         #endif
 
-        vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
-
         float shadow_NoL = dot(localNormal, localSkyLightDir);
         shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
 
     #ifdef LIGHTING_COLORED
         vec3 voxelPos = GetVoxelPosition(vIn.localPos);
-        float lpvFade = float(IsInVoxelBounds(voxelPos));
+        float lpvFade = GetVoxelFade(voxelPos);// float(IsInVoxelBounds(voxelPos));
     #endif
 
-    #if LIGHTING_MODE == LIGHTING_MODE_CUSTOM
-        // TODO: more fancy, custom lighting
-        color.rgb = albedo.rgb;
-    #else
-        vec2 lmcoord = vIn.lmcoord;
+    vec2 lmcoord = vIn.lmcoord;
+    #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
+        lmcoord = pow(lmcoord, vec2(3.0));
 
+        const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
+        vec3 blockLight = lmcoord.x * blockLightColor;
+
+        #ifdef LIGHTING_COLORED
+            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
+            vec3 lpvSample = SampleFloodFill(samplePos);
+            blockLight = mix(blockLight, lpvSample, lpvFade);
+        #endif
+
+        const vec3 skyLightColor = pow(vec3(0.961, 0.925, 0.843), vec3(2.2));
+
+        float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
+
+        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
+        float dayF = smoothstep(-0.15, 0.05, localSunLightDir.y);
+        float skyLightBrightness = mix(0.04, 1.00, dayF);
+        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightBrightness * skyLightColor;
+
+        color.rgb = albedo.rgb * (blockLight + skyLight);
+
+        #ifdef RENDER_TERRAIN
+            color.rgb *= _pow2(vIn.color.a);
+        #endif
+    #else
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
         #ifdef RENDER_ENTITY

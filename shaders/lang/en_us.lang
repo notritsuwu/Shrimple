@@ -1,6 +1,8 @@
 screen.LIGHTING=Lighting
 
 option.LIGHTING_MODE=Mode
+value.LIGHTING_MODE.0=Vanilla
+value.LIGHTING_MODE.1=Enhanced
 
 option.LIGHTING_COLORED=Colored
 
