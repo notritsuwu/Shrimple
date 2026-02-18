@@ -42,8 +42,25 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     vec2 lmcoord = parameters.lightMap;
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
-        // TODO
-        color.rgb = albedo.rgb;
+        lmcoord = pow(lmcoord, vec2(3.0));
+
+        const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
+        vec3 blockLight = lmcoord.x * blockLightColor;
+
+        const vec3 skyLightColor = pow(vec3(0.961, 0.925, 0.843), vec3(2.2));
+
+        vec3 localSkyLightDir = normalize(mat3(vxModelViewInv) * shadowLightPosition);
+        float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
+
+        vec3 localSunLightDir = normalize(mat3(vxModelViewInv) * sunPosition);
+        float dayF = smoothstep(-0.15, 0.05, localSunLightDir.y);
+        float skyLightBrightness = mix(0.04, 1.00, dayF);
+        vec3 skyLight = lmcoord.y * (skyLight_NoLm*0.7 + 0.3) * skyLightBrightness * skyLightColor;
+
+        color.rgb = albedo.rgb * (blockLight + skyLight);
+
+        // TODO: AO
+        // color.rgb *= _pow2(vIn.color.a);
     #else
         float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
         lmcoord.y *= sky_lit;

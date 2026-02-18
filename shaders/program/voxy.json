@@ -18,6 +18,8 @@
     "skyColor",
     "viewSize",
     "taa_offset",
+    "sunPosition",
+    "shadowLightPosition",
     "vxRenderDistance",
     "vxProjInv",
     "vxModelViewInv"

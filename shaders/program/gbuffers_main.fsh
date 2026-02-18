@@ -72,8 +72,6 @@ void main() {
 
 	vec4 color = textureLod(gtexture, vIn.texcoord, mip);
 
-    // opaque is a fallback for cutout not being supported
-    // #if defined(RENDER_CUTOUT) || defined(RENDER_OPAQUE)
     #ifndef RENDER_SOLID
         if (color.a < alphaTestRef) discard;
     #endif
@@ -116,7 +114,7 @@ void main() {
 
     #ifdef LIGHTING_COLORED
         vec3 voxelPos = GetVoxelPosition(vIn.localPos);
-        float lpvFade = GetVoxelFade(voxelPos);// float(IsInVoxelBounds(voxelPos));
+        float lpvFade = GetVoxelFade(voxelPos);
     #endif
 
     vec2 lmcoord = vIn.lmcoord;
