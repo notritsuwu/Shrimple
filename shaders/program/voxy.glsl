@@ -1,6 +1,7 @@
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
+#include "/lib/blocks.glsl"
 #include "/lib/sampling/lightmap.glsl"
 #include "/lib/oklab.glsl"
 #include "/lib/fog.glsl"
@@ -28,6 +29,13 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     ) * (float(int(parameters.face) & 1) * 2.0 - 1.0);
 
     // TODO: if vanilla lighting, make foliage have "up" normals
+    #if LIGHTING_MODE == LIGHTING_MODE_VANILLA
+        bool isGrass = parameters.customId == BLOCK_GRASS
+            || parameters.customId == BLOCK_TALL_GRASS_LOWER
+            || parameters.customId == BLOCK_TALL_GRASS_UPPER;
+
+        if (isGrass) localNormal = vec3(0,1,0);
+    #endif
 
     vec3 albedo = RGBToLinear(color.rgb);
     float viewDist = length(localPos);
