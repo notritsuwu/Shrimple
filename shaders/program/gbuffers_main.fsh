@@ -47,6 +47,8 @@ uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
 uniform int frameCounter;
 
+uniform int vxRenderDistance;
+
 #include "/lib/oklab.glsl"
 #include "/lib/hsv.glsl"
 #include "/lib/fog.glsl"
@@ -169,9 +171,14 @@ void main() {
         color.rgb = albedo.rgb * lit;
     #endif
 
-    float borderFogF = smoothstep(0.94 * far, far, viewDist);
-    float envFogF = smoothstep(fogStart, fogEnd, viewDist);// * fogDensity;
-//    float envFogF = exp(-5.0 * (1.0 - saturate(viewDist/far)));
+    #ifdef VOXY
+        #define _far (vxRenderDistance * 16.0)
+    #else
+        #define _far far
+    #endif
+
+    float borderFogF = smoothstep(0.94 * _far, _far, viewDist);
+    float envFogF = smoothstep(fogStart, fogEnd, viewDist);
     float fogF = max(borderFogF, envFogF);
 
     #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)

@@ -18,7 +18,9 @@
     "skyColor",
     "viewSize",
     "taa_offset",
-    "vxRenderDistance"
+    "vxRenderDistance",
+    "vxProjInv",
+    "vxModelViewInv"
   ],
   "samplers": {
     "lightmap": "sampler2D"

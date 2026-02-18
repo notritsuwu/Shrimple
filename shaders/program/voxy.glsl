@@ -2,6 +2,8 @@
 #include "/lib/common.glsl"
 
 #include "/lib/sampling/lightmap.glsl"
+#include "/lib/oklab.glsl"
+#include "/lib/fog.glsl"
 
 
 /* RENDERTARGETS: 0 */
@@ -12,20 +14,29 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec4 color = parameters.sampledColour;
     color.rgb *= parameters.tinting.rgb;
 
+    vec3 ndcPos = gl_FragCoord.xyz;
+    ndcPos.xy /= viewSize;
+    ndcPos = ndcPos * 2.0 - 1.0;
+
+    vec3 viewPos = unproject(vxProjInv, ndcPos);
+    vec3 localPos = mul3(vxModelViewInv, viewPos);
+
     vec3 localNormal = vec3(
         uint((parameters.face >> 1) == 2),
         uint((parameters.face >> 1) == 0),
         uint((parameters.face >> 1) == 1)
     ) * (float(int(parameters.face) & 1) * 2.0 - 1.0);
 
-    vec3 albedo = RGBToLinear(color.rgb);
+    // TODO: if vanilla lighting, make foliage have "up" normals
 
-    #if LIGHTING_MODE == LIGHTING_MODE_CUSTOM
+    vec3 albedo = RGBToLinear(color.rgb);
+    float viewDist = length(localPos);
+
+    vec2 lmcoord = parameters.lightMap;
+    #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         // TODO
         color.rgb = albedo.rgb;
     #else
-        vec2 lmcoord = parameters.lightMap;
-
         float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
         lmcoord.y *= sky_lit;
 
@@ -35,6 +46,18 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
         color.rgb = albedo.rgb * lit;
     #endif
+
+    #define _far (vxRenderDistance * 16.0)
+    float borderFogF = smoothstep(0.94 * _far, _far, viewDist);
+    float envFogF = smoothstep(fogStart, fogEnd, viewDist);
+    float fogF = max(borderFogF, envFogF);
+
+    vec3 fogColorL = RGBToLinear(fogColor);
+    vec3 skyColorL = RGBToLinear(skyColor);
+    vec3 localViewDir = normalize(localPos);
+    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+
+    color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
     outFinal = color;
 }
