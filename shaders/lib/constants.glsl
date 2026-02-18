@@ -3,5 +3,9 @@
 
 #define BLOCK_SOLID 1
 
+#define MAT_DEFAULT 0
+#define MAT_LABPBR 2
+#define MAT_OLDPBR 1
+
 #define LIGHTING_MODE_VANILLA 0
 #define LIGHTING_MODE_ENHANCED 1

@@ -15,6 +15,7 @@ in VertexData {
 
 
 uniform sampler2D gtexture;
+uniform sampler2D specular;
 
 #if LIGHTING_MODE == LIGHTING_MODE_VANILLA
     uniform sampler2D lightmap;
@@ -52,6 +53,7 @@ uniform int vxRenderDistance;
 #include "/lib/oklab.glsl"
 #include "/lib/hsv.glsl"
 #include "/lib/fog.glsl"
+#include "/lib/material.glsl"
 #include "/lib/sampling/lightmap.glsl"
 
 #ifdef LIGHTING_COLORED
@@ -85,6 +87,9 @@ void main() {
     #ifdef RENDER_ENTITY
         color.rgb = mix(color.rgb, entityColor.rgb, entityColor.a);
     #endif
+
+    vec4 specularData = textureLod(specular, vIn.texcoord, mip);
+    float emission = mat_emission(specularData);
 
     vec3 albedo = RGBToLinear(color.rgb);
     float viewDist = length(vIn.localPos);
@@ -126,7 +131,7 @@ void main() {
 
         #ifdef LIGHTING_COLORED
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
-            vec3 lpvSample = SampleFloodFill(samplePos);
+            vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
             blockLight = mix(blockLight, lpvSample, lpvFade);
         #endif
 
@@ -136,10 +141,10 @@ void main() {
 
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
         float dayF = smoothstep(-0.15, 0.05, localSunLightDir.y);
-        float skyLightBrightness = mix(0.04, 1.00, dayF);
+        float skyLightBrightness = mix(0.02, 1.00, dayF);
         vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightBrightness * skyLightColor;
 
-        color.rgb = albedo.rgb * (blockLight + skyLight);
+        color.rgb = albedo * (blockLight + skyLight);
 
         #ifdef RENDER_TERRAIN
             color.rgb *= _pow2(vIn.color.a);
@@ -166,8 +171,10 @@ void main() {
             lit += lpvFade * lpvSample;
         #endif
 
-        color.rgb = albedo.rgb * lit;
+        color.rgb = albedo * lit;
     #endif
+
+    color.rgb += albedo * emission;
 
     #ifdef VOXY
         #define _far (vxRenderDistance * 16.0)

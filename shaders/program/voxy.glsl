@@ -54,7 +54,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
         vec3 localSunLightDir = normalize(mat3(vxModelViewInv) * sunPosition);
         float dayF = smoothstep(-0.15, 0.05, localSunLightDir.y);
-        float skyLightBrightness = mix(0.04, 1.00, dayF);
+        float skyLightBrightness = mix(0.02, 1.00, dayF);
         vec3 skyLight = lmcoord.y * (skyLight_NoLm*0.7 + 0.3) * skyLightBrightness * skyLightColor;
 
         color.rgb = albedo.rgb * (blockLight + skyLight);
