@@ -41,6 +41,17 @@ const bool shadowHardwareFiltering = true;
     const float voxelDistance = 64.0;
 #endif
 
+#if MATERIAL_FORMAT == MAT_DEFAULT && defined(MC_TEXTURE_FORMAT_LAB_PBR)
+    #undef MATERIAL_FORMAT
+    #define MATERIAL_FORMAT MAT_LABPBR
+#endif
+
+#if MATERIAL_FORMAT != 0
+    #define MATERIAL_PBR_ENABLED
+#else
+    #undef MATERIAL_PARALLAX_ENABLED
+#endif
+
 #ifdef BLOOM_ENABLED
 #endif
 

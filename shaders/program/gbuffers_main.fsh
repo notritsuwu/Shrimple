@@ -93,32 +93,20 @@ layout(location = 0) out vec4 outFinal;
 void main() {
     vec2 texcoord = vIn.texcoord;
 	float mip = textureQueryLod(gtexture, texcoord).y;
-    vec3 localNormal = normalize(vIn.localNormal);
+    vec3 localGeoNormal = normalize(vIn.localNormal);
     float viewDist = length(vIn.localPos);
 
     #ifdef MATERIAL_PARALLAX_ENABLED
         bool skipParallax = false;
 //        if (vIn.blockId == BLOCK_LAVA || vIn.blockId == BLOCK_END_PORTAL) skipParallax = true;
 
-        if (!skipParallax && viewDist < MATERIAL_PARALLAX_MAX_DIST) {
-            float texDepth = 1.0;
-            vec3 traceCoordDepth = vec3(1.0);
-            vec3 tanViewDir = normalize(vIn.tangentViewPos);
+        float texDepth = 1.0;
+        vec3 traceCoordDepth = vec3(1.0);
+        vec3 tanViewDir = normalize(vIn.tangentViewPos);
 
+        if (!skipParallax && viewDist < MATERIAL_PARALLAX_MAX_DIST) {
             vec2 localCoord = GetLocalCoord(texcoord, vIn.atlasTilePos, vIn.atlasTileSize);
             texcoord = GetParallaxCoord(localCoord, mip, tanViewDir, viewDist, texDepth, traceCoordDepth);
-
-            #if MATERIAL_PARALLAX_TYPE == PARALLAX_SHARP
-                float depthDiff = max(texDepth - traceCoordDepth.z, 0.0);
-
-                if (depthDiff >= ParallaxSharpThreshold) {
-                    vec3 tex_normal = GetParallaxSlopeNormal(texcoord, mip, traceCoordDepth.z, tanViewDir);
-
-                    vec3 localTangent = normalize(vIn.localTangent.xyz);
-                    mat3 matLocalTBN = BuildTBN(localNormal, localTangent, vIn.localTangent.w);
-                    localNormal = normalize(matLocalTBN * tex_normal);
-                }
-            #endif
         }
     #endif
 
@@ -138,12 +126,29 @@ void main() {
         color.rgb = mix(color.rgb, entityColor.rgb, entityColor.a);
     #endif
 
-    vec4 normalData = textureLod(normals, texcoord, mip);
-    vec3 tex_normal = mat_normal(normalData.xyz);
-    float tex_occlusion = mat_occlusion(normalData.w);
+    #ifdef MATERIAL_PBR_ENABLED
+        vec4 normalData = textureLod(normals, texcoord, mip);
+        vec3 tex_normal = mat_normal(normalData.xyz);
+        float tex_occlusion = mat_occlusion(normalData.w);
 
-    vec4 specularData = textureLod(specular, texcoord, mip);
-    float emission = mat_emission(specularData);
+        #if defined(MATERIAL_PARALLAX_ENABLED) && MATERIAL_PARALLAX_TYPE == PARALLAX_SHARP
+            float depthDiff = max(texDepth - traceCoordDepth.z, 0.0);
+
+            if (depthDiff >= ParallaxSharpThreshold) {
+                tex_normal = GetParallaxSlopeNormal(texcoord, mip, traceCoordDepth.z, tanViewDir);
+            }
+        #endif
+
+        vec3 localTangent = normalize(vIn.localTangent.xyz);
+        mat3 matLocalTBN = BuildTBN(localGeoNormal, localTangent, vIn.localTangent.w);
+        vec3 localTexNormal = normalize(matLocalTBN * tex_normal);
+
+        vec4 specularData = textureLod(specular, texcoord, mip);
+        float emission = mat_emission(specularData);
+    #else
+        vec3 localTexNormal = localGeoNormal;
+        const float emission = 0.0;
+    #endif
 
     vec3 albedo = RGBToLinear(color.rgb);
 
@@ -155,8 +160,10 @@ void main() {
 
     float shadow = 1.0;
     #ifdef SHADOWS_ENABLED
-        vec3 shadowPos = mul3(shadowModelView, vIn.localPos);
-        shadowPos.z += 0.016 * viewDist;
+        vec3 shadowPos = vIn.localPos;
+        shadowPos += 0.08 * localGeoNormal;
+        shadowPos = mul3(shadowModelView, shadowPos);
+        shadowPos.z += 0.032 * viewDist;
         shadowPos = (shadowProjection * vec4(shadowPos, 1.0)).xyz;
 
         distort(shadowPos.xy);
@@ -169,7 +176,7 @@ void main() {
             shadow = step(shadowPos.z, shadowDepth);
         #endif
 
-        float shadow_NoL = dot(localNormal, localSkyLightDir);
+        float shadow_NoL = dot(localTexNormal, localSkyLightDir);
         shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
 
@@ -186,14 +193,14 @@ void main() {
         vec3 blockLight = lmcoord.x * blockLightColor;
 
         #ifdef LIGHTING_COLORED
-            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
+            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localTexNormal);
             vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
             blockLight = mix(blockLight, lpvSample, lpvFade);
         #endif
 
         const vec3 skyLightColor = pow(vec3(0.961, 0.925, 0.843), vec3(2.2));
 
-        float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
+        float skyLight_NoLm = max(dot(localSkyLightDir, localTexNormal), 0.0);
 
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
         float dayF = smoothstep(-0.15, 0.05, localSunLightDir.y);
@@ -207,14 +214,12 @@ void main() {
         #endif
 
         // TODO: move to ambient lighting?
-        color.rgb *= _pow2(tex_occlusion);
+        color.rgb *= tex_occlusion;
     #else
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
-//        #ifdef RENDER_ENTITY
-            float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
-            lmcoord.y *= sky_lit;
-//        #endif
+        float sky_NoLM = dot(localTexNormal * localTexNormal, vec3(0.6, 0.25 * localTexNormal.y + 0.75, 0.8));
+        lmcoord.y *= saturate(sky_NoLM);
 
         #ifdef LIGHTING_COLORED
             lmcoord.x *= 1.0 - lpvFade;
@@ -225,19 +230,20 @@ void main() {
         lit = RGBToLinear(lit);
 
         #ifdef LIGHTING_COLORED
-            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
+            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localTexNormal);
             vec3 lpvSample = SampleFloodFill(samplePos, pow(vIn.lmcoord.x, 2.2));
             lit += lpvFade * lpvSample;
         #endif
 
         color.rgb = albedo * lit;
-        color.rgb *= _pow2(tex_occlusion);
+        color.rgb *= tex_occlusion;
     #endif
 
     color.rgb += albedo * emission;
 
 
-//    color.rgb = localNormal * 0.5 + 0.5;
+//    color.rgb = localTexNormal * 0.5 + 0.5;
+//    color.rgb = vec3(lmcoord, 0);
 
 
     #ifdef VOXY
