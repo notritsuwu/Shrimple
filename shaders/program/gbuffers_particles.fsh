@@ -87,12 +87,15 @@ void main() {
         color *= vIn.color;
     #endif
 
-    vec4 normalData = textureLod(normals, texcoord, mip);
-//    vec3 tex_normal = mat_normal(normalData.xyz);
-    float tex_occlusion = mat_occlusion(normalData.w);
+    #ifdef MATERIAL_PBR_ENABLED
+        vec4 normalData = textureLod(normals, texcoord, mip);
+    //    vec3 tex_normal = mat_normal(normalData.xyz);
+        float tex_occlusion = mat_occlusion(normalData.w);
 
-    vec4 specularData = textureLod(specular, texcoord, mip);
-    float emission = mat_emission(specularData);
+        vec4 specularData = textureLod(specular, texcoord, mip);
+    #else
+        const float tex_occlusion = 1.0;
+    #endif
 
     vec3 albedo = RGBToLinear(color.rgb);
 
@@ -173,8 +176,10 @@ void main() {
         color.rgb *= tex_occlusion;
     #endif
 
-    color.rgb += albedo * emission;
-
+    #ifdef MATERIAL_PBR_ENABLED
+        float emission = mat_emission(specularData);
+        color.rgb += albedo * emission;
+    #endif
 
     #ifdef VOXY
         #define _far (vxRenderDistance * 16.0)
