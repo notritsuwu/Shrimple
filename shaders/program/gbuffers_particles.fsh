@@ -1,5 +1,3 @@
-#define RENDER_FRAGMENT
-
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
@@ -8,18 +6,7 @@ in VertexData {
     vec2 lmcoord;
     vec2 texcoord;
     vec3 localPos;
-    vec3 localNormal;
-
-    #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)
-        float chunkFade;
-    #endif
-
-    #ifdef MATERIAL_PARALLAX_ENABLED
-        vec3 tangentViewPos;
-        flat vec4 localTangent;
-        flat vec2 atlasTilePos;
-        flat vec2 atlasTileSize;
-    #endif
+//    vec3 localNormal;
 } vIn;
 
 
@@ -48,7 +35,6 @@ uniform float fogDensity;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
-uniform vec4 entityColor;
 uniform float alphaTestRef;
 uniform vec3 sunPosition;
 uniform vec3 shadowLightPosition;
@@ -58,8 +44,8 @@ uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
 uniform int frameCounter;
 uniform int isEyeInWater;
-uniform ivec2 atlasSize;
-uniform vec2 viewSize;
+//uniform ivec2 atlasSize;
+//uniform vec2 viewSize;
 
 uniform int textureFilteringMode;
 uniform int vxRenderDistance;
@@ -69,13 +55,6 @@ uniform int vxRenderDistance;
 #include "/lib/fog.glsl"
 #include "/lib/material.glsl"
 #include "/lib/sampling/lightmap.glsl"
-
-#ifdef MATERIAL_PARALLAX_ENABLED
-    #include "/lib/sampling/atlas.glsl"
-    #include "/lib/sampling/linear.glsl"
-    #include "/lib/parallax.glsl"
-    #include "/lib/tbn.glsl"
-#endif
 
 #ifdef LIGHTING_COLORED
     #include "/lib/voxel.glsl"
@@ -92,41 +71,13 @@ layout(location = 0) out vec4 outFinal;
 
 void main() {
     vec2 texcoord = vIn.texcoord;
-	float mip = textureQueryLod(gtexture, texcoord).y;
-    vec3 localNormal = normalize(vIn.localNormal);
+    float mip = textureQueryLod(gtexture, texcoord).y;
+//    vec3 localNormal = normalize(vIn.localNormal);
     float viewDist = length(vIn.localPos);
-
-    #ifdef MATERIAL_PARALLAX_ENABLED
-        bool skipParallax = false;
-//        if (vIn.blockId == BLOCK_LAVA || vIn.blockId == BLOCK_END_PORTAL) skipParallax = true;
-
-        if (!skipParallax && viewDist < MATERIAL_PARALLAX_MAX_DIST) {
-            float texDepth = 1.0;
-            vec3 traceCoordDepth = vec3(1.0);
-            vec3 tanViewDir = normalize(vIn.tangentViewPos);
-
-            vec2 localCoord = GetLocalCoord(texcoord, vIn.atlasTilePos, vIn.atlasTileSize);
-            texcoord = GetParallaxCoord(localCoord, mip, tanViewDir, viewDist, texDepth, traceCoordDepth);
-
-            #if MATERIAL_PARALLAX_TYPE == PARALLAX_SHARP
-                float depthDiff = max(texDepth - traceCoordDepth.z, 0.0);
-
-                if (depthDiff >= ParallaxSharpThreshold) {
-                    vec3 tex_normal = GetParallaxSlopeNormal(texcoord, mip, traceCoordDepth.z, tanViewDir);
-
-                    vec3 localTangent = normalize(vIn.localTangent.xyz);
-                    mat3 matLocalTBN = BuildTBN(localNormal, localTangent, vIn.localTangent.w);
-                    localNormal = normalize(matLocalTBN * tex_normal);
-                }
-            #endif
-        }
-    #endif
 
     vec4 color = textureLod(gtexture, texcoord, mip);
 
-    #ifndef RENDER_SOLID
-        if (color.a < alphaTestRef) discard;
-    #endif
+    if (color.a < alphaTestRef) discard;
 
     #if defined(RENDER_TERRAIN) && LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         color.rgb *= vIn.color.rgb;
@@ -134,12 +85,8 @@ void main() {
         color *= vIn.color;
     #endif
 
-    #ifdef RENDER_ENTITY
-        color.rgb = mix(color.rgb, entityColor.rgb, entityColor.a);
-    #endif
-
     vec4 normalData = textureLod(normals, texcoord, mip);
-    vec3 tex_normal = mat_normal(normalData.xyz);
+//    vec3 tex_normal = mat_normal(normalData.xyz);
     float tex_occlusion = mat_occlusion(normalData.w);
 
     vec4 specularData = textureLod(specular, texcoord, mip);
@@ -169,8 +116,8 @@ void main() {
             shadow = step(shadowPos.z, shadowDepth);
         #endif
 
-        float shadow_NoL = dot(localNormal, localSkyLightDir);
-        shadow *= pow(saturate(shadow_NoL), 0.2);
+//        float shadow_NoL = dot(localNormal, localSkyLightDir);
+//        shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
 
     #ifdef LIGHTING_COLORED
@@ -186,19 +133,19 @@ void main() {
         vec3 blockLight = lmcoord.x * blockLightColor;
 
         #ifdef LIGHTING_COLORED
-            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
+            vec3 samplePos = GetFloodFillSamplePos(voxelPos, vec3(0.0));
             vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
             blockLight = mix(blockLight, lpvSample, lpvFade);
         #endif
 
         const vec3 skyLightColor = pow(vec3(0.961, 0.925, 0.843), vec3(2.2));
 
-        float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
+//        float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
 
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
         float dayF = smoothstep(-0.15, 0.05, localSunLightDir.y);
         float skyLightBrightness = mix(0.02, 1.00, dayF);
-        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightBrightness * skyLightColor;
+        vec3 skyLight = lmcoord.y * (shadow*0.7 + 0.3) * skyLightBrightness * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
 
@@ -211,10 +158,10 @@ void main() {
     #else
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
-//        #ifdef RENDER_ENTITY
-            float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
-            lmcoord.y *= sky_lit;
-//        #endif
+        //        #ifdef RENDER_ENTITY
+//        float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
+//        lmcoord.y *= sky_lit;
+        //        #endif
 
         #ifdef LIGHTING_COLORED
             lmcoord.x *= 1.0 - lpvFade;
@@ -225,7 +172,7 @@ void main() {
         lit = RGBToLinear(lit);
 
         #ifdef LIGHTING_COLORED
-            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
+            vec3 samplePos = GetFloodFillSamplePos(voxelPos, vec3(0.0));
             vec3 lpvSample = SampleFloodFill(samplePos, pow(vIn.lmcoord.x, 2.2));
             lit += lpvFade * lpvSample;
         #endif
@@ -235,10 +182,7 @@ void main() {
     #endif
 
     color.rgb += albedo * emission;
-
-
-//    color.rgb = localNormal * 0.5 + 0.5;
-
+    
 
     #ifdef VOXY
         #define _far (vxRenderDistance * 16.0)

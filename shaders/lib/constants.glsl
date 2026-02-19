@@ -15,3 +15,5 @@
 #define LIGHTING_MODE_ENHANCED 1
 
 #define BUFFER_BLOOM_TILES colortex15
+
+const vec3 luma_factor = vec3(0.2126, 0.7152, 0.0722);

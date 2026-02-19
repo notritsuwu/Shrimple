@@ -19,7 +19,14 @@ void main() {
     if (all(lessThan(gl_GlobalInvocationID.xy, viewSize))) {
         vec3 color = texelFetch(texSource, ivec2(gl_GlobalInvocationID.xy), 0).rgb;
 
-        // TODO: tonemap
+        #ifdef TONEMAP_ENABLED
+            const float wp = 16.0;
+
+            float lum = luminance(color);
+//            float tgt = lum * (lum/wp + 1.0) / (lum + 1.0);
+            float tgt = lum / (lum + 0.5);
+            color *= tgt / lum;
+        #endif
 
         color = LinearToRGB(color);
 

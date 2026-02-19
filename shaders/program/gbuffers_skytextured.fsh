@@ -21,15 +21,15 @@ void main() {
 
     color *= vIn.color;
 
+    color.rgb = RGBToLinear(color.rgb);
+
     #if LIGHTING_MODE == LIGHTING_MODE_VANILLA
         if (renderStage == MC_RENDER_STAGE_SUN) {
-            color.rgb *= 4.0;
+            color.rgb *= 8.0;
         }
 
-        color = saturate(color);
+//        color = saturate(color);
     #endif
-
-    color.rgb = RGBToLinear(color.rgb);
 
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         if (renderStage == MC_RENDER_STAGE_SUN) {

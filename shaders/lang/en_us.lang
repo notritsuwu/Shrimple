@@ -49,6 +49,11 @@ option.SHADOWS_ENABLED=Enabled
 option.shadowMapResolution=Resolution
 
 
+screen.POST=Post-Processing
+
+option.TONEMAP_ENABLED=Tone Mapping
+
+
 screen.BLOOM=Bloom
 
 option.BLOOM_ENABLED=Enabled
