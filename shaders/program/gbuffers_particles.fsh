@@ -182,7 +182,7 @@ void main() {
     #endif
 
     color.rgb += albedo * emission;
-    
+
 
     #ifdef VOXY
         #define _far (vxRenderDistance * 16.0)
