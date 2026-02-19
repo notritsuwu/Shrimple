@@ -1,17 +1,15 @@
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
-#define texSource colortex0
-#define imgFinal colorimg0
 
 layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 const vec2 workGroupsRender = vec2(1.0, 1.0);
 
-layout(rgba16f) uniform image2D imgFinal;
+layout(rgba16f) uniform image2D IMG_FINAL;
 
 shared vec3 sharedBuffer[18*18];
 
-uniform sampler2D texSource;
+uniform sampler2D TEX_FINAL;
 
 uniform vec2 viewSize;
 
@@ -37,7 +35,7 @@ void main() {
 
             if (i_shared < (18*18)) {
                 ivec2 uv_i = getSharedUV(i_shared);
-                vec3 color = texelFetch(texSource, uv_base + uv_i, 0).rgb;
+                vec3 color = texelFetch(TEX_FINAL, uv_base + uv_i, 0).rgb;
                 sharedBuffer[i_shared] = color;
             }
         }
@@ -68,6 +66,6 @@ void main() {
         vec3 color = ((b + d + f + h) * weight + e) * weight_inv;
         color = saturate(color);
 
-        imageStore(imgFinal, ivec2(gl_GlobalInvocationID.xy), vec4(color, 1.0));
+        imageStore(IMG_FINAL, ivec2(gl_GlobalInvocationID.xy), vec4(color, 1.0));
     }
 }

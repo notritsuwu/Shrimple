@@ -5,11 +5,9 @@
 
 in vec2 texcoord;
 
-uniform sampler2D BUFFER_BLOOM_TILES;
+uniform sampler2D TEX_BLOOM_TILES;
 
 uniform vec2 viewSize;
-//uniform int isEyeInWater;
-//uniform float nightVision;
 
 #include "/lib/bloom.glsl"
 
@@ -18,11 +16,7 @@ uniform vec2 viewSize;
 layout(location = 0) out vec3 outFinal;
 
 void main() {
-    vec3 color = BloomTileUpsample(BUFFER_BLOOM_TILES, -1);
-
-//    if (isEyeInWater == 1) {
-//        color *= 3.0;
-//    }
+    vec3 color = BloomTileUpsample(TEX_BLOOM_TILES, -1);
 
     outFinal = color * EffectBloomStrengthF;
 }

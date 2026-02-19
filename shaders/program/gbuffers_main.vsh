@@ -4,9 +4,12 @@
 #include "/lib/common.glsl"
 
 
+#ifdef MATERIAL_PBR_ENABLED
+    in vec4 at_tangent;
+#endif
+
 #ifdef MATERIAL_PARALLAX_ENABLED
     in vec4 mc_midTexCoord;
-    in vec4 at_tangent;
 #endif
 
 out VertexData {
@@ -20,9 +23,12 @@ out VertexData {
         float chunkFade;
     #endif
 
+    #ifdef MATERIAL_PBR_ENABLED
+        flat vec4 localTangent;
+    #endif
+
     #ifdef MATERIAL_PARALLAX_ENABLED
         vec3 tangentViewPos;
-        flat vec4 localTangent;
         flat vec2 atlasTilePos;
         flat vec2 atlasTileSize;
     #endif
@@ -37,11 +43,10 @@ uniform mat4 gbufferModelViewInverse;
 
 
 #include "/lib/sampling/lightmap.glsl"
+#include "/lib/tbn.glsl"
 
 #ifdef MATERIAL_PARALLAX_ENABLED
-    #include "/lib/tbn.glsl"
     #include "/lib/sampling/atlas.glsl"
-//    #include "/lib/parallax.glsl"
 #endif
 
 
@@ -67,12 +72,14 @@ void main() {
         gl_Position.xy += taa_offset * (2.0 * gl_Position.w);
     #endif
 
-    #ifdef MATERIAL_PARALLAX_ENABLED
-        GetAtlasBounds(vOut.texcoord, vOut.atlasTilePos, vOut.atlasTileSize);
-
+    #ifdef MATERIAL_PBR_ENABLED
         vec3 viewTangent = normalize(gl_NormalMatrix * at_tangent.xyz);
         vOut.localTangent.xyz = mat3(gbufferModelViewInverse) * viewTangent;
         vOut.localTangent.w = at_tangent.w;
+    #endif
+
+    #ifdef MATERIAL_PARALLAX_ENABLED
+        GetAtlasBounds(vOut.texcoord, vOut.atlasTilePos, vOut.atlasTileSize);
 
         mat3 matViewTBN = BuildTBN(viewNormal, viewTangent, at_tangent.w);
 

@@ -6,13 +6,15 @@ in VertexData {
     vec2 lmcoord;
     vec2 texcoord;
     vec3 localPos;
-//    vec3 localNormal;
 } vIn;
 
 
 uniform sampler2D gtexture;
-uniform sampler2D normals;
-uniform sampler2D specular;
+
+#ifdef MATERIAL_PBR_ENABLED
+    uniform sampler2D normals;
+    uniform sampler2D specular;
+#endif
 
 #if LIGHTING_MODE == LIGHTING_MODE_VANILLA
     uniform sampler2D lightmap;
@@ -44,8 +46,6 @@ uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
 uniform int frameCounter;
 uniform int isEyeInWater;
-//uniform ivec2 atlasSize;
-//uniform vec2 viewSize;
 
 uniform int textureFilteringMode;
 uniform int vxRenderDistance;
@@ -53,8 +53,11 @@ uniform int vxRenderDistance;
 #include "/lib/oklab.glsl"
 #include "/lib/hsv.glsl"
 #include "/lib/fog.glsl"
-#include "/lib/material.glsl"
 #include "/lib/sampling/lightmap.glsl"
+
+#ifdef MATERIAL_PBR_ENABLED
+    #include "/lib/material.glsl"
+#endif
 
 #ifdef LIGHTING_COLORED
     #include "/lib/voxel.glsl"
@@ -72,7 +75,6 @@ layout(location = 0) out vec4 outFinal;
 void main() {
     vec2 texcoord = vIn.texcoord;
     float mip = textureQueryLod(gtexture, texcoord).y;
-//    vec3 localNormal = normalize(vIn.localNormal);
     float viewDist = length(vIn.localPos);
 
     vec4 color = textureLod(gtexture, texcoord, mip);
@@ -115,9 +117,6 @@ void main() {
             float shadowDepth = textureLod(shadowtex1, shadowPos.xy, 0).r;
             shadow = step(shadowPos.z, shadowDepth);
         #endif
-
-//        float shadow_NoL = dot(localNormal, localSkyLightDir);
-//        shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
 
     #ifdef LIGHTING_COLORED
@@ -140,8 +139,6 @@ void main() {
 
         const vec3 skyLightColor = pow(vec3(0.961, 0.925, 0.843), vec3(2.2));
 
-//        float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
-
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
         float dayF = smoothstep(-0.15, 0.05, localSunLightDir.y);
         float skyLightBrightness = mix(0.02, 1.00, dayF);
@@ -154,14 +151,9 @@ void main() {
         #endif
 
         // TODO: move to ambient lighting?
-        color.rgb *= _pow2(tex_occlusion);
+        color.rgb *= tex_occlusion;
     #else
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
-
-        //        #ifdef RENDER_ENTITY
-//        float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
-//        lmcoord.y *= sky_lit;
-        //        #endif
 
         #ifdef LIGHTING_COLORED
             lmcoord.x *= 1.0 - lpvFade;
@@ -178,7 +170,7 @@ void main() {
         #endif
 
         color.rgb = albedo * lit;
-        color.rgb *= _pow2(tex_occlusion);
+        color.rgb *= tex_occlusion;
     #endif
 
     color.rgb += albedo * emission;

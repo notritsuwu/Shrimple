@@ -5,16 +5,16 @@
 
 in vec2 texcoord;
 
-uniform sampler2D BUFFER_BLOOM_TILES;
+uniform sampler2D TEX_BLOOM_TILES;
 
 uniform vec2 viewSize;
 
 #include "/lib/bloom.glsl"
 
 
-/* RENDERTARGETS: 15 */
+/* RENDERTARGETS: 5 */
 layout(location = 0) out vec3 outFinal;
 
 void main() {
-    outFinal = BloomTileUpsample(BUFFER_BLOOM_TILES, 0);
+    outFinal = BloomTileUpsample(TEX_BLOOM_TILES, 0);
 }

@@ -38,6 +38,32 @@ float mat_occlusion(const in float normal_a) {
     #endif
 }
 
+float mat_roughness(const in float specular_r) {
+    #if MATERIAL_FORMAT != MAT_DEFAULT
+        return 1.0 - specular_r;
+    #else
+        return 1.0;
+    #endif
+}
+
+float mat_metalness_lab(const in float f0_metal) {
+    return step((229.5/255.0), f0_metal);
+}
+
+float mat_metalness_old(const in float f0_metal) {
+    return f0_metal;
+}
+
+float mat_metalness(const in float f0_metal) {
+    #if MATERIAL_FORMAT == MAT_LABPBR
+        return mat_metalness_lab(f0_metal);
+    #elif MATERIAL_FORMAT == MAT_OLDPBR
+        return mat_metalness_old(f0_metal);
+    #else
+        return 0.0;
+    #endif
+}
+
 float mat_emission_lab(const in float specular_a) {
     return fract(specular_a);
 }

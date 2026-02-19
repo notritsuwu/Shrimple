@@ -1,12 +1,15 @@
 /*
 const int colortex0Format  = RGBA16F;
-const int colortex15Format  = RGBA16F;
+const int colortex1Format  = RGB8;
+const int colortex5Format  = RGBA16F;
 */
 
 
 const float sunPathRotation = 0; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10 -5 0 1 2 5 10 15 20 25 30 35 40 45 50 55 60]
 
 #define MATERIAL_FORMAT 0 // [0 1 2]
+//#define MATERIAL_REFLECT_ENABLED
+
 #define MATERIAL_PARALLAX_ENABLED
 #define MATERIAL_PARALLAX_TYPE 1 // [0 1 2]
 #define MATERIAL_PARALLAX_SAMPLES 32 // [8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96]
@@ -56,7 +59,6 @@ const bool shadowHardwareFiltering = true;
 #endif
 
 
-//#define _rcp(x) (1.0 / (x))
 #define _pow2(x) (x*x)
 #define _pow3(x) (x*x*x)
 #define _saturate(x) (clamp(x, 0.0, 1.0))

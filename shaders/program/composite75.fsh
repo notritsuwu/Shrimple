@@ -5,23 +5,16 @@
 
 in vec2 texcoord;
 
-uniform sampler2D BUFFER_BLOOM_TILES;
+uniform sampler2D TEX_BLOOM_TILES;
 
 uniform vec2 viewSize;
-//uniform vec2 pixelSize;
-uniform int frameCounter;
 
-//#include "/lib/sampling/ign.glsl"
 #include "/lib/bloom.glsl"
 
 
-/* RENDERTARGETS: 15 */
+/* RENDERTARGETS: 5 */
 layout(location = 0) out vec3 outFinal;
 
 void main() {
-    vec3 color = BloomTileDownsample(BUFFER_BLOOM_TILES, 5);
-
-//    DitherBloom(color);
-
-    outFinal = color;
+    outFinal = BloomTileDownsample(TEX_BLOOM_TILES, 5);
 }

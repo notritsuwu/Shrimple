@@ -1,8 +1,6 @@
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
-#define texFinal colortex0
-#define imgFinal colorimg0
 
 layout (local_size_x = 16, local_size_y = 16) in;
 const vec2 workGroupsRender = vec2(1.0, 1.0);
@@ -11,12 +9,12 @@ const vec2 workGroupsRender = vec2(1.0, 1.0);
 const float TAA_RejectionStrength = 0.1;
 const int TAA_MaxAccumFrames = 8;
 
-layout(rgba16f) uniform image2D imgFinal;
+layout(rgba16f) uniform image2D IMG_FINAL;
 layout(rgba16f) uniform image2D imgFinalPrev;
 
 shared vec3 sharedBuffer[18*18];
 
-uniform sampler2D texFinal;
+uniform sampler2D TEX_FINAL;
 uniform sampler2D texFinalPrev;
 uniform sampler2D depthtex0;
 
@@ -49,7 +47,7 @@ void main() {
 
             if (i_shared < (18*18)) {
                 uvec2 uv_i = getSharedUV(i_shared);
-                sharedBuffer[i_shared] = texelFetch(texFinal, ivec2(uv_base + uv_i), 0).rgb;
+                sharedBuffer[i_shared] = texelFetch(TEX_FINAL, ivec2(uv_base + uv_i), 0).rgb;
             }
         }
     }
@@ -109,7 +107,7 @@ void main() {
 //        vec3 diff = clamped - antialiased;
 //        mixRate *= 1.0 / (dot(diff, diff) * TAA_RejectionStrength + 1.0);
 
-        imageStore(imgFinal, ivec2(gl_GlobalInvocationID.xy), vec4(clamped, 1.0));
+        imageStore(IMG_FINAL, ivec2(gl_GlobalInvocationID.xy), vec4(clamped, 1.0));
         imageStore(imgFinalPrev, ivec2(gl_GlobalInvocationID.xy), vec4(clamped, (mixRate + 1.0)));
     }
 }

@@ -14,6 +14,8 @@ value.MATERIAL_FORMAT.0=Default
 value.MATERIAL_FORMAT.1=Old PBR
 value.MATERIAL_FORMAT.2=Lab PBR
 
+option.MATERIAL_REFLECT_ENABLED=Reflections
+
 
 screen.MATERIAL_PARALLAX=Parallax
 
