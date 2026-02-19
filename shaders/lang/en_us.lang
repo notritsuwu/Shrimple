@@ -1,9 +1,33 @@
+profile.VANILLA=Vanilla
+profile.ENHANCED=Enhanced
+
+
+screen.DEBUG=Shrimple
+
+option.DEBUG_WHITEWORLD=White-World
+
+
 screen.MATERIAL=Materials/PBR
 
 option.MATERIAL_FORMAT=Format
 value.MATERIAL_FORMAT.0=Default
 value.MATERIAL_FORMAT.1=Old PBR
 value.MATERIAL_FORMAT.2=Lab PBR
+
+
+screen.MATERIAL_PARALLAX=Parallax
+
+option.MATERIAL_PARALLAX_ENABLED=Enabled
+
+option.MATERIAL_PARALLAX_TYPE=Type
+value.MATERIAL_PARALLAX_TYPE.0=Basic
+value.MATERIAL_PARALLAX_TYPE.1=Sharp
+value.MATERIAL_PARALLAX_TYPE.2=Smooth
+
+option.MATERIAL_PARALLAX_DEPTH=Depth
+suffix.MATERIAL_PARALLAX_DEPTH=%
+
+option.MATERIAL_PARALLAX_SAMPLES=Sample Count
 
 
 screen.LIGHTING=Lighting
@@ -23,6 +47,14 @@ screen.SHADOWS=Shadows
 option.SHADOWS_ENABLED=Enabled
 
 option.shadowMapResolution=Resolution
+
+
+screen.BLOOM=Bloom
+
+option.BLOOM_ENABLED=Enabled
+
+option.BLOOM_STRENGTH=Strength
+suffix.BLOOM_STRENGTH=%
 
 
 screen.TAA=TAA

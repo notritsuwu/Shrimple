@@ -1,6 +1,13 @@
+#define RENDER_VERTEX
+
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
+
+#ifdef MATERIAL_PARALLAX_ENABLED
+    in vec4 mc_midTexCoord;
+    in vec4 at_tangent;
+#endif
 
 out VertexData {
     vec4 color;
@@ -11,6 +18,13 @@ out VertexData {
 
     #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)
         float chunkFade;
+    #endif
+
+    #ifdef MATERIAL_PARALLAX_ENABLED
+        vec3 tangentViewPos;
+        flat vec4 localTangent;
+        flat vec2 atlasTilePos;
+        flat vec2 atlasTileSize;
     #endif
 } vOut;
 
@@ -23,6 +37,12 @@ uniform mat4 gbufferModelViewInverse;
 
 
 #include "/lib/sampling/lightmap.glsl"
+
+#ifdef MATERIAL_PARALLAX_ENABLED
+    #include "/lib/tbn.glsl"
+    #include "/lib/sampling/atlas.glsl"
+//    #include "/lib/parallax.glsl"
+#endif
 
 
 void main() {
@@ -45,5 +65,17 @@ void main() {
 
     #ifdef TAA_ENABLED
         gl_Position.xy += taa_offset * (2.0 * gl_Position.w);
+    #endif
+
+    #ifdef MATERIAL_PARALLAX_ENABLED
+        GetAtlasBounds(vOut.texcoord, vOut.atlasTilePos, vOut.atlasTileSize);
+
+        vec3 viewTangent = normalize(gl_NormalMatrix * at_tangent.xyz);
+        vOut.localTangent.xyz = mat3(gbufferModelViewInverse) * viewTangent;
+        vOut.localTangent.w = at_tangent.w;
+
+        mat3 matViewTBN = BuildTBN(viewNormal, viewTangent, at_tangent.w);
+
+        vOut.tangentViewPos = viewPos.xyz * matViewTBN;
     #endif
 }

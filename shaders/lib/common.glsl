@@ -1,30 +1,45 @@
 /*
 const int colortex0Format  = RGBA16F;
+const int colortex15Format  = RGBA16F;
 */
+
 
 const float sunPathRotation = 0; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10 -5 0 1 2 5 10 15 20 25 30 35 40 45 50 55 60]
 
 #define MATERIAL_FORMAT 0 // [0 1 2]
+#define MATERIAL_PARALLAX_ENABLED
+#define MATERIAL_PARALLAX_TYPE 0 // [0 1 2]
+#define MATERIAL_PARALLAX_SAMPLES 32 // [8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96]
+#define MATERIAL_PARALLAX_DEPTH 25 // [5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100]
+#define MATERIAL_PARALLAX_MAX_DIST 48.0
 
 #define LIGHTING_MODE 0 // [0 1]
-#define LIGHTING_COLORED
+//#define LIGHTING_COLORED
 #define LIGHTING_COLORED_CANDLES
 #define LIGHTING_VOXEL_SIZE 128 // [64 128 256]
 #define LPV_FRUSTUM_OFFSET 0
 
-#define SHADOWS_ENABLED
+//#define SHADOWS_ENABLED
 const int shadowMapResolution = 1024; // [128 256 512 768 1024 1536 2048 3072 4096 6144 8192]
 const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 450 500 600 700 800 900 1000 1200 1400 1600 1800 2000 2200 2400 2600 2800 3000 3200 3400 3600 3800 4000]
+
+//#define BLOOM_ENABLED
+#define BLOOM_STRENGTH 2.0 // [0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.2 5.4 5.6 5.8 6.0 8 10 12 14 16 18 20]
 
 #define TAA_ENABLED
 #define TAA_SHARPNESS 50 //[0 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100]
 //#define TAA_SHARPEN_HISTORY
+
+//#define DEBUG_WHITEWORLD
 
 
 const bool shadowHardwareFiltering = true;
 
 #ifdef LIGHTING_COLORED
     const float voxelDistance = 64.0;
+#endif
+
+#ifdef BLOOM_ENABLED
 #endif
 
 

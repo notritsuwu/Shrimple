@@ -5,7 +5,7 @@
 
 
 const float MATERIAL_EMISSION_POWER = 2.0;
-const float MATERIAL_EMISSION_SCALE = 8.0;
+const float MATERIAL_EMISSION_SCALE = 80.0;
 
 
 float mat_emission_lab(const in float specular_a) {

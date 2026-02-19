@@ -1,5 +1,24 @@
-composite90	    taa resolve
-composite91     taa sharpen /CAS
+composite70		bloom downscale 1/2
+composite71		bloom downscale 1/4
+composite72		bloom downscale 1/8
+composite73		bloom downscale 1/16
+composite74		bloom downscale 1/32
+composite75		bloom downscale 1/64
+composite76		bloom downscale 1/128
+composite77		bloom downscale 1/256
+
+composite80		bloom upscale 1/128
+composite81		bloom upscale 1/64
+composite82		bloom upscale 1/32
+composite83		bloom upscale 1/16
+composite84		bloom upscale 1/8
+composite85		bloom upscale 1/4
+composite86		bloom upscale 1/2
+composite87		bloom upscale final
+
+composite90	    tonemap
+composite91	    taa resolve
+composite92     taa sharpen /CAS
 
 final			final --/ debug output
 

@@ -1,3 +1,5 @@
+#define RENDER_FRAGMENT
+
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
@@ -11,10 +13,18 @@ in VertexData {
     #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)
         float chunkFade;
     #endif
+
+    #ifdef MATERIAL_PARALLAX_ENABLED
+        vec3 tangentViewPos;
+        flat vec4 localTangent;
+        flat vec2 atlasTilePos;
+        flat vec2 atlasTileSize;
+    #endif
 } vIn;
 
 
 uniform sampler2D gtexture;
+uniform sampler2D normals;
 uniform sampler2D specular;
 
 #if LIGHTING_MODE == LIGHTING_MODE_VANILLA
@@ -47,6 +57,8 @@ uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
 uniform int frameCounter;
+uniform int isEyeInWater;
+uniform ivec2 atlasSize;
 
 uniform int vxRenderDistance;
 
@@ -55,6 +67,13 @@ uniform int vxRenderDistance;
 #include "/lib/fog.glsl"
 #include "/lib/material.glsl"
 #include "/lib/sampling/lightmap.glsl"
+
+#ifdef MATERIAL_PARALLAX_ENABLED
+    #include "/lib/sampling/atlas.glsl"
+    #include "/lib/sampling/linear.glsl"
+    #include "/lib/parallax.glsl"
+    #include "/lib/tbn.glsl"
+#endif
 
 #ifdef LIGHTING_COLORED
     #include "/lib/voxel.glsl"
@@ -70,9 +89,38 @@ layout(location = 0) out vec4 outFinal;
 
 
 void main() {
-	float mip = textureQueryLod(gtexture, vIn.texcoord).y;
+    vec2 texcoord = vIn.texcoord;
+	float mip = textureQueryLod(gtexture, texcoord).y;
+    vec3 localNormal = normalize(vIn.localNormal);
+    float viewDist = length(vIn.localPos);
 
-	vec4 color = textureLod(gtexture, vIn.texcoord, mip);
+    #ifdef MATERIAL_PARALLAX_ENABLED
+        bool skipParallax = false;
+//        if (vIn.blockId == BLOCK_LAVA || vIn.blockId == BLOCK_END_PORTAL) skipParallax = true;
+
+        if (!skipParallax && viewDist < MATERIAL_PARALLAX_MAX_DIST) {
+            float texDepth = 1.0;
+            vec3 traceCoordDepth = vec3(1.0);
+            vec3 tanViewDir = normalize(vIn.tangentViewPos);
+
+            vec2 localCoord = GetLocalCoord(texcoord, vIn.atlasTilePos, vIn.atlasTileSize);
+            texcoord = GetParallaxCoord(localCoord, mip, tanViewDir, viewDist, texDepth, traceCoordDepth);
+
+            #if MATERIAL_PARALLAX_TYPE == PARALLAX_SHARP
+                float depthDiff = max(texDepth - traceCoordDepth.z, 0.0);
+
+                if (depthDiff >= ParallaxSharpThreshold) {
+                    vec3 tex_normal = GetParallaxSlopeNormal(texcoord, mip, traceCoordDepth.z, tanViewDir);
+
+                    vec3 localTangent = normalize(vIn.localTangent.xyz);
+                    mat3 matLocalTBN = BuildTBN(localNormal, localTangent, vIn.localTangent.w);
+                    localNormal = normalize(matLocalTBN * tex_normal);
+                }
+            #endif
+        }
+    #endif
+
+	vec4 color = textureLod(gtexture, texcoord, mip);
 
     #ifndef RENDER_SOLID
         if (color.a < alphaTestRef) discard;
@@ -88,12 +136,14 @@ void main() {
         color.rgb = mix(color.rgb, entityColor.rgb, entityColor.a);
     #endif
 
-    vec4 specularData = textureLod(specular, vIn.texcoord, mip);
+    vec4 specularData = textureLod(specular, texcoord, mip);
     float emission = mat_emission(specularData);
 
     vec3 albedo = RGBToLinear(color.rgb);
-    float viewDist = length(vIn.localPos);
-    vec3 localNormal = normalize(vIn.localNormal);
+
+    #ifdef DEBUG_WHITEWORLD
+        albedo = vec3(0.86);
+    #endif
 
     vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
 
@@ -152,10 +202,10 @@ void main() {
     #else
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
-        #ifdef RENDER_ENTITY
+//        #ifdef RENDER_ENTITY
             float sky_lit = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
             lmcoord.y *= sky_lit;
-        #endif
+//        #endif
 
         #ifdef LIGHTING_COLORED
             lmcoord.x *= 1.0 - lpvFade;
@@ -175,6 +225,10 @@ void main() {
     #endif
 
     color.rgb += albedo * emission;
+
+
+//    color.rgb = localNormal * 0.5 + 0.5;
+
 
     #ifdef VOXY
         #define _far (vxRenderDistance * 16.0)

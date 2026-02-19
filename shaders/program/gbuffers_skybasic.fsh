@@ -6,6 +6,7 @@ in vec3 localPos;
 
 
 uniform int renderStage;
+uniform int isEyeInWater;
 uniform vec3 skyColor;
 uniform vec3 fogColor;
 

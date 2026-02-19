@@ -5,6 +5,8 @@ float fogify(const in float x, const in float w) {
 }
 
 vec3 GetSkyFogColor(const in vec3 skyColor, const in vec3 fogColor, const in float viewUpF) {
+    if (isEyeInWater == 1) return fogColor;
+
     #ifdef WORLD_NETHER
         return fogColor;
     #else

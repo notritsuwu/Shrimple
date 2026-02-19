@@ -11,6 +11,7 @@ in VertexData {
 uniform sampler2D gtexture;
 
 uniform int renderStage;
+uniform int isEyeInWater;
 uniform vec3 skyColor;
 uniform float far;
 uniform vec3 fogColor;

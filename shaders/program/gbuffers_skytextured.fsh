@@ -1,6 +1,7 @@
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
+
 in VertexData {
     vec4 color;
     vec2 texcoord;
@@ -20,13 +21,21 @@ void main() {
 
     color *= vIn.color;
 
-    if (renderStage == MC_RENDER_STAGE_SUN) {
-        color.rgb *= 4.0;
-    }
+    #if LIGHTING_MODE == LIGHTING_MODE_VANILLA
+        if (renderStage == MC_RENDER_STAGE_SUN) {
+            color.rgb *= 4.0;
+        }
 
-    color = saturate(color);
+        color = saturate(color);
+    #endif
 
     color.rgb = RGBToLinear(color.rgb);
+
+    #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
+        if (renderStage == MC_RENDER_STAGE_SUN) {
+            color.rgb *= 16.0;
+        }
+    #endif
 
     outFinal = color;
 }
