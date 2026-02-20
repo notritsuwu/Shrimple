@@ -10,6 +10,7 @@
 
 #ifdef MATERIAL_PARALLAX_ENABLED
     in vec4 mc_midTexCoord;
+    in vec4 mc_Entity;
 #endif
 
 out VertexData {
@@ -25,6 +26,7 @@ out VertexData {
 
     #ifdef MATERIAL_PBR_ENABLED
         flat vec4 localTangent;
+        flat int blockId;
     #endif
 
     #ifdef MATERIAL_PARALLAX_ENABLED
@@ -84,5 +86,7 @@ void main() {
         mat3 matViewTBN = BuildTBN(viewNormal, viewTangent, at_tangent.w);
 
         vOut.tangentViewPos = viewPos.xyz * matViewTBN;
+
+        vOut.blockId = int(mc_Entity.x + EPSILON);
     #endif
 }

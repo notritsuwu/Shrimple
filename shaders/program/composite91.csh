@@ -59,7 +59,7 @@ void main() {
         float depthNow = textureLod(depthtex0, texcoord, 0).r;
         vec3 clipPos = vec3(texcoord, depthNow) * 2.0 - 1.0;
 
-        vec3 viewPos = unproject(gbufferProjectionInverse, clipPos);
+        vec3 viewPos = project(gbufferProjectionInverse, clipPos);
 
         vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
 
@@ -68,7 +68,7 @@ void main() {
 
         vec3 viewPosPrev = mul3(gbufferPreviousModelView, localPosPrev);
 
-        vec3 clipPosPrev = unproject(gbufferPreviousProjection, viewPosPrev);
+        vec3 clipPosPrev = project(gbufferPreviousProjection, viewPosPrev);
 
         vec2 uv_prev = clipPosPrev.xy * 0.5 + 0.5;
 

@@ -16,6 +16,7 @@ in VertexData {
 
     #ifdef MATERIAL_PBR_ENABLED
         flat vec4 localTangent;
+        flat int blockId;
     #endif
 
     #ifdef MATERIAL_PARALLAX_ENABLED
@@ -71,6 +72,7 @@ uniform vec2 viewSize;
 uniform int textureFilteringMode;
 uniform int vxRenderDistance;
 
+#include "/lib/blocks.glsl"
 #include "/lib/oklab.glsl"
 #include "/lib/hsv.glsl"
 #include "/lib/fog.glsl"
@@ -97,10 +99,10 @@ uniform int vxRenderDistance;
 #endif
 
 
-#ifdef MATERIAL_REFLECT_ENABLED
+#ifdef LIGHTING_REFLECT_ENABLED
     /* RENDERTARGETS: 0,1 */
     layout(location = 0) out vec4 outFinal;
-    layout(location = 1) out vec3 outNormal;
+    layout(location = 1) out uvec2 outReflect;
 #else
     /* RENDERTARGETS: 0 */
     layout(location = 0) out vec4 outFinal;
@@ -116,7 +118,7 @@ void main() {
 
     #ifdef MATERIAL_PARALLAX_ENABLED
         bool skipParallax = false;
-//        if (vIn.blockId == BLOCK_LAVA || vIn.blockId == BLOCK_END_PORTAL) skipParallax = true;
+        if (vIn.blockId == BLOCK_LAVA || vIn.blockId == BLOCK_END_PORTAL) skipParallax = true;
 
         float texDepth = 1.0;
         vec3 traceCoordDepth = vec3(1.0);
@@ -162,6 +164,10 @@ void main() {
         vec3 localTexNormal = normalize(matLocalTBN * tex_normal);
 
         vec4 specularData = textureLod(specular, texcoord, mip);
+
+        if (vIn.blockId == BLOCK_WATER) {
+            specularData = vec4(0.98, 0.02, 0.0, 0.0);
+        }
     #else
         vec3 localTexNormal = localGeoNormal;
         const float tex_occlusion = 1.0;
@@ -257,13 +263,13 @@ void main() {
     #endif
 
     #ifdef MATERIAL_PBR_ENABLED
-        #ifdef MATERIAL_REFLECT_ENABLED
-            float metalness = mat_metalness(specularData.g);
+        #ifdef LIGHTING_REFLECT_ENABLED
             float smoothness = 1.0 - mat_roughness(specularData.r);
-            color.rgb *= 1.0 - metalness * smoothness;
+            float metalness = mat_metalness(specularData.g);
+            color.rgb *= 1.0 - metalness * sqrt(smoothness);
 
             float NoVm = max(dot(localTexNormal, -localViewDir), 0.0);
-            color.rgb *= 1.0 - pow(1.0 - NoVm, 5.0);
+            color.rgb *= 1.0 - pow(1.0 - NoVm, 5.0) * _pow2(smoothness);
         #endif
 
         float emission = mat_emission(specularData);
@@ -301,8 +307,11 @@ void main() {
 
     outFinal = color;
 
-    #ifdef MATERIAL_REFLECT_ENABLED
+    #ifdef LIGHTING_REFLECT_ENABLED
         vec3 viewNormal = mat3(gbufferModelView) * localTexNormal;
-        outNormal = viewNormal * 0.5 + 0.5;
+
+        outReflect = uvec2(
+            packUnorm4x8(vec4(LinearToRGB(albedo), specularData.r)),
+            packUnorm4x8(vec4(viewNormal * 0.5 + 0.5, specularData.g)));
     #endif
 }

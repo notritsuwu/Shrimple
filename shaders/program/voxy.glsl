@@ -19,7 +19,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     ndcPos.xy /= viewSize;
     ndcPos = ndcPos * 2.0 - 1.0;
 
-    vec3 viewPos = unproject(vxProjInv, ndcPos);
+    vec3 viewPos = project(vxProjInv, ndcPos);
     vec3 localPos = mul3(vxModelViewInv, viewPos);
 
     vec3 localNormal = vec3(

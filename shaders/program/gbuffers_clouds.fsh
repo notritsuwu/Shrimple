@@ -22,8 +22,14 @@ uniform float fogEnd;
 #include "/lib/oklab.glsl"
 #include "/lib/fog.glsl"
 
-/* RENDERTARGETS: 0 */
-layout(location = 0) out vec4 outFinal;
+#ifdef LIGHTING_REFLECT_ENABLED
+    /* RENDERTARGETS: 0,1 */
+    layout(location = 0) out vec4 outFinal;
+    layout(location = 1) out uvec2 outReflect;
+#else
+    /* RENDERTARGETS: 0 */
+    layout(location = 0) out vec4 outFinal;
+#endif
 
 
 void main() {
@@ -47,4 +53,5 @@ void main() {
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
     outFinal = color;
+    outReflect = uvec2(0);
 }

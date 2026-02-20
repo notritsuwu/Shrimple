@@ -46,19 +46,19 @@ float mat_roughness(const in float specular_r) {
     #endif
 }
 
-float mat_metalness_lab(const in float f0_metal) {
-    return step((229.5/255.0), f0_metal);
+float mat_metalness_lab(const in float specular_g) {
+    return step((229.5/255.0), specular_g);
 }
 
-float mat_metalness_old(const in float f0_metal) {
-    return f0_metal;
+float mat_metalness_old(const in float specular_g) {
+    return specular_g;
 }
 
-float mat_metalness(const in float f0_metal) {
+float mat_metalness(const in float specular_g) {
     #if MATERIAL_FORMAT == MAT_LABPBR
-        return mat_metalness_lab(f0_metal);
+        return mat_metalness_lab(specular_g);
     #elif MATERIAL_FORMAT == MAT_OLDPBR
-        return mat_metalness_old(f0_metal);
+        return mat_metalness_old(specular_g);
     #else
         return 0.0;
     #endif

@@ -1,6 +1,6 @@
 /*
 const int colortex0Format  = RGBA16F;
-const int colortex1Format  = RGB8;
+const int colortex1Format  = RG32UI;
 const int colortex5Format  = RGBA16F;
 */
 
@@ -8,7 +8,6 @@ const int colortex5Format  = RGBA16F;
 const float sunPathRotation = 0; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10 -5 0 1 2 5 10 15 20 25 30 35 40 45 50 55 60]
 
 #define MATERIAL_FORMAT 0 // [0 1 2]
-//#define MATERIAL_REFLECT_ENABLED
 
 #define MATERIAL_PARALLAX_ENABLED
 #define MATERIAL_PARALLAX_TYPE 1 // [0 1 2]
@@ -18,6 +17,7 @@ const float sunPathRotation = 0; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -10
 
 #define LIGHTING_MODE 0 // [0 1]
 //#define LIGHTING_COLORED
+//#define LIGHTING_REFLECT_ENABLED
 #define LIGHTING_COLORED_CANDLES
 #define LIGHTING_VOXEL_SIZE 128 // [64 128 256]
 #define LPV_FRUSTUM_OFFSET 0
@@ -111,10 +111,10 @@ vec3 mul3(const in mat4 matrix, const in vec3 vector) {
     return mat3(matrix) * vector + matrix[3].xyz;
 }
 
-vec3 unproject(const in vec4 pos) {
+vec3 project(const in vec4 pos) {
     return pos.xyz / pos.w;
 }
 
-vec3 unproject(const in mat4 matProj, const in vec3 pos) {
-    return unproject(matProj * vec4(pos, 1.0));
+vec3 project(const in mat4 matProj, const in vec3 pos) {
+    return project(matProj * vec4(pos, 1.0));
 }

@@ -14,8 +14,6 @@ value.MATERIAL_FORMAT.0=Default
 value.MATERIAL_FORMAT.1=Old PBR
 value.MATERIAL_FORMAT.2=Lab PBR
 
-option.MATERIAL_REFLECT_ENABLED=Reflections
-
 
 screen.MATERIAL_PARALLAX=Parallax
 
@@ -39,6 +37,8 @@ value.LIGHTING_MODE.0=Vanilla
 value.LIGHTING_MODE.1=Enhanced
 
 option.LIGHTING_COLORED=Colored
+
+option.LIGHTING_REFLECT_ENABLED=Reflections
 
 option.LIGHTING_VOXEL_SIZE=Voxel Size
 suffix.LIGHTING_VOXEL_SIZE=m

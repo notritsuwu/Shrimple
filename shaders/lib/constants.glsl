@@ -16,7 +16,7 @@
 
 #define TEX_FINAL colortex0
 #define IMG_FINAL colorimg0
-#define TEX_NORMALS colortex1
+#define TEX_REFLECT_DATA colortex1
 #define TEX_BLOOM_TILES colortex5
 
 const vec3 luma_factor = vec3(0.2126, 0.7152, 0.0722);
