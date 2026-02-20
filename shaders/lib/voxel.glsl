@@ -10,9 +10,9 @@ vec3 GetVoxelCenter(const in vec3 viewPos, const in vec3 viewDir) {
     return VoxelBufferCenter + fract(viewPos);
 }
 
-vec3 GetVoxelPosition(const in vec3 position) {
+vec3 GetVoxelPosition(const in vec3 localPos) {
     vec3 viewDir = gbufferModelViewInverse[2].xyz;
-    return position + GetVoxelCenter(cameraPosition, viewDir);
+    return localPos + GetVoxelCenter(cameraPosition, viewDir);
 }
 
 bool IsInVoxelBounds(const in ivec3 voxelPos) {

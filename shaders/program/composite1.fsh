@@ -160,7 +160,7 @@ void main() {
                     vec3 blockLight = vec3(0.0);
 
                     #ifdef LIGHTING_COLORED
-                        vec3 voxelPos = GetVoxelPosition(ray.result_position - cameraPosition);
+                        vec3 voxelPos = GetVoxelPosition(ray.result_position - (cameraPosition - world_offset));
                         vec3 samplePos = GetFloodFillSamplePos(voxelPos, ray.result_normal);
                         vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
 //                        blockLight = mix(blockLight, lpvSample, lpvFade);
