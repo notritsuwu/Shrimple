@@ -117,7 +117,17 @@ void main() {
 //        float specular_g = reflectDataG.w;
 
         float lmcoord_y = reflectDataR.w;
-        float roughness = mat_roughness(specularData.r);
+
+        #ifdef MATERIAL_PBR_ENABLED
+            float roughness = mat_roughness(specularData.r);
+            float metalness = mat_metalness(specularData.g);
+            float f0 = mat_f0(specularData.g);
+        #else
+            float roughness = mat_roughness_lab(specularData.r);
+            float metalness = mat_metalness_lab(specularData.g);
+            float f0 = mat_f0_lab(specularData.g);
+        #endif
+
         float smoothness = 1.0 - roughness;
 
 
@@ -256,14 +266,12 @@ void main() {
             reflectColor *= lmcoord_y;
         }
 
-        float f0 = mat_f0(specularData.g);
         float NoV = dot(viewNormal, -viewDir);
         reflectColor *= F_schlick(NoV, f0, 1.0);
 
         reflectColor *= _pow2(smoothness);
 
         vec3 albedo = RGBToLinear(reflectDataR.rgb);
-        float metalness = mat_metalness(specularData.g);
         vec3 tint = mix(vec3(1.0), albedo, metalness);
         reflectColor *= tint;
     }

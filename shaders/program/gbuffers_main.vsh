@@ -4,14 +4,9 @@
 #include "/lib/common.glsl"
 
 
-#ifdef MATERIAL_PBR_ENABLED
-    in vec4 at_tangent;
-#endif
-
-#ifdef MATERIAL_PARALLAX_ENABLED
-    in vec4 mc_midTexCoord;
-    in vec4 mc_Entity;
-#endif
+in vec4 at_tangent;
+in vec4 mc_midTexCoord;
+in vec4 mc_Entity;
 
 out VertexData {
     vec4 color;
@@ -26,13 +21,16 @@ out VertexData {
 
     #ifdef MATERIAL_PBR_ENABLED
         flat vec4 localTangent;
-        flat int blockId;
     #endif
 
     #ifdef MATERIAL_PARALLAX_ENABLED
         vec3 tangentViewPos;
         flat vec2 atlasTilePos;
         flat vec2 atlasTileSize;
+    #endif
+
+    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+        flat int blockId;
     #endif
 } vOut;
 
@@ -96,7 +94,9 @@ void main() {
         mat3 matViewTBN = BuildTBN(viewNormal, viewTangent, at_tangent.w);
 
         vOut.tangentViewPos = viewPos.xyz * matViewTBN;
+    #endif
 
+    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
         vOut.blockId = int(mc_Entity.x + EPSILON);
     #endif
 }

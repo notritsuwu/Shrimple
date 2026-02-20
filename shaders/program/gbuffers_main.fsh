@@ -16,13 +16,16 @@ in VertexData {
 
     #ifdef MATERIAL_PBR_ENABLED
         flat vec4 localTangent;
-        flat int blockId;
     #endif
 
     #ifdef MATERIAL_PARALLAX_ENABLED
         vec3 tangentViewPos;
         flat vec2 atlasTilePos;
         flat vec2 atlasTileSize;
+    #endif
+
+    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+        flat int blockId;
     #endif
 } vIn;
 
@@ -79,7 +82,7 @@ uniform int vxRenderDistance;
 #include "/lib/tbn.glsl"
 #include "/lib/sampling/lightmap.glsl"
 
-#ifdef MATERIAL_PBR_ENABLED
+#if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
     #include "/lib/fresnel.glsl"
     #include "/lib/material.glsl"
 #endif
@@ -175,16 +178,13 @@ void main() {
 
         vec4 specularData = textureLod(specular, texcoord, mip);
 
-        if (vIn.blockId == BLOCK_WATER) {
-            specularData = vec4(0.98, 0.02, 0.0, 0.0);
-        }
-
         // TODO: DEBUG ONLY!
 //        if (specularData.g >= 0.9) {
 //            color.rgb = vec3(1.0);
 //            specularData.rg = vec2(1.0);
 //        }
     #else
+        vec4 specularData = vec4(0.0, 0.04, 0.0, 0.0);
         vec3 localTexNormal = localGeoNormal;
         const float tex_occlusion = 1.0;
     #endif
@@ -193,6 +193,14 @@ void main() {
 
     #ifdef DEBUG_WHITEWORLD
         albedo = vec3(0.86);
+    #endif
+
+    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+        if (vIn.blockId == BLOCK_WATER) {
+            // TODO: add option to make clear?
+//            albedo = vec3(0.0);
+            specularData = vec4(0.98, 0.02, 0.0, 0.0);
+        }
     #endif
 
     vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
@@ -275,18 +283,23 @@ void main() {
         color.rgb *= tex_occlusion;
     #endif
 
-    #ifdef MATERIAL_PBR_ENABLED
-        #ifdef LIGHTING_REFLECT_ENABLED
+    #ifdef LIGHTING_REFLECT_ENABLED
+        #ifdef MATERIAL_PBR_ENABLED
             float smoothness = 1.0 - mat_roughness(specularData.r);
             float metalness = mat_metalness(specularData.g);
-            color.rgb *= 1.0 - metalness * sqrt(smoothness);
-
             float f0 = mat_f0(specularData.g);
-            float NoV = dot(localTexNormal, -localViewDir);
 
-            color.rgb *= 1.0 - F_schlick(NoV, f0, 1.0) * _pow2(smoothness);
+            color.rgb *= 1.0 - metalness * sqrt(smoothness);
+        #else
+            float smoothness = 1.0 - mat_roughness_lab(specularData.r);
+            float f0 = mat_f0_lab(specularData.g);
         #endif
 
+        float NoV = dot(localTexNormal, -localViewDir);
+        color.rgb *= 1.0 - F_schlick(NoV, f0, 1.0) * _pow2(smoothness);
+    #endif
+
+    #ifdef MATERIAL_PBR_ENABLED
         float emission = mat_emission(specularData);
         color.rgb += albedo * emission;
     #endif
