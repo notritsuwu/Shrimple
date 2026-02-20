@@ -52,7 +52,6 @@ uniform vec2 taa_offset = vec2(0.0);
 
 #ifdef PHOTONICS
     #include "/photonics/photonics.glsl"
-    #include "/photonics/ph_raytracing.glsl"
 
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         #include "/lib/enhanced-lighting.glsl"
@@ -210,7 +209,6 @@ void main() {
             vec3 traceClipPos_prev = traceClipStart;
             vec2 traceScreenPos;
 
-            bool hit = false;
             float dither = 0.5;//GetBayerValue(uv);
             for (uint i = 0; i < MATERIAL_REFLECT_STEPS; i++) {
                 float f = (i + dither) / float(MATERIAL_REFLECT_STEPS);
