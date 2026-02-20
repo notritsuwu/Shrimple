@@ -34,11 +34,40 @@ float mat_occlusion(const in float normal_a) {
     #endif
 }
 
+float mat_roughness_lab(const in float specular_r) {
+    return 1.0 - specular_r;
+}
+
+float mat_roughness_old(const in float specular_r) {
+    return 1.0 - specular_r;
+}
+
 float mat_roughness(const in float specular_r) {
-    #if MATERIAL_FORMAT != MAT_DEFAULT
-        return 1.0 - specular_r;
+    #if MATERIAL_FORMAT == MAT_LABPBR
+        return mat_roughness_lab(specular_r);
+    #elif MATERIAL_FORMAT == MAT_OLDPBR
+        return mat_roughness_old(specular_r);
     #else
         return 1.0;
+    #endif
+}
+
+float mat_f0_lab(const in float specular_g) {
+    // TODO: add HCM
+    return clamp(specular_g, 0.0, 0.9);
+}
+
+float mat_f0_old(const in float specular_g) {
+    return mix(0.04, 1.0, specular_g);
+}
+
+float mat_f0(const in float specular_g) {
+    #if MATERIAL_FORMAT == MAT_LABPBR
+        return mat_f0_lab(specular_g);
+    #elif MATERIAL_FORMAT == MAT_OLDPBR
+        return mat_f0_old(specular_g);
+    #else
+        return 0.04;
     #endif
 }
 

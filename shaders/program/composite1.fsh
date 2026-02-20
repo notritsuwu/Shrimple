@@ -13,31 +13,55 @@ uniform sampler2D depthtex0;
 uniform sampler2D TEX_FINAL;
 uniform usampler2D TEX_REFLECT_DATA;
 
+#ifdef PHOTONICS
+    uniform sampler2D texLightmap;
+
+    #ifdef LIGHTING_COLORED
+        uniform sampler3D texFloodFillA;
+        uniform sampler3D texFloodFillB;
+    #endif
+#endif
+
 uniform float near;
 uniform float farPlane;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
 uniform int isEyeInWater;
+uniform vec3 sunPosition;
 uniform vec3 cameraPosition;
+uniform vec3 shadowLightPosition;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 
 //uniform vec3 camera_position;
+//uniform vec3 world_offset;
 uniform int frameCounter;
 
 uniform vec2 taa_offset = vec2(0.0);
 
 
+#include "/lib/hsv.glsl"
+#include "/lib/oklab.glsl"
 #include "/lib/sampling/bayer.glsl"
 #include "/lib/sampling/depth.glsl"
-#include "/lib/oklab.glsl"
+#include "/lib/sampling/lightmap.glsl"
 #include "/lib/fog.glsl"
+#include "/lib/fresnel.glsl"
 #include "/lib/material.glsl"
 
 #ifdef PHOTONICS
     #include "/photonics/photonics.glsl"
     #include "/photonics/ph_raytracing.glsl"
+
+    #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
+        #include "/lib/enhanced-lighting.glsl"
+    #endif
+
+    #ifdef LIGHTING_COLORED
+        #include "/lib/voxel.glsl"
+        #include "/lib/floodfill-render.glsl"
+    #endif
 #endif
 
 
@@ -77,9 +101,9 @@ void main() {
         vec3 screenPos = vec3(texcoord, depth);
         vec3 ndcPos = screenPos * 2.0 - 1.0;
 
-    //    #ifdef TAA_ENABLED
-    //        ndcPos.xy += taa_offset * 2.0;
-    //    #endif
+        #ifdef TAA_ENABLED
+            ndcPos.xy -= taa_offset * 2.0;
+        #endif
 
         vec3 viewPos = project(gbufferProjectionInverse, ndcPos);
         vec3 viewDir = normalize(viewPos);
@@ -100,36 +124,82 @@ void main() {
         vec3 reflectViewDir = normalize(reflect(viewDir, viewNormal));
 
 
-        bool hit;
+        bool hit = false;
         #ifdef PHOTONICS
             vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
-            vec3 localViewDir = normalize(localPos);
-            vec3 rtPos = localPos + camera_position;
+            vec3 rtPos = localPos + (cameraPosition - world_offset);
 
             vec3 localNormal = mat3(gbufferModelViewInverse) * viewNormal;
+            vec3 localReflectDir = mat3(gbufferModelViewInverse) * reflectViewDir;
 
             RayJob ray = RayJob(
-                // Translates from world space to rt space
-                // The offset along the normal is very important to ensure that the ray doesn't start outside the block
-                rtPos - 0.001 * localNormal, // Ray origin
-
-                // View direction of the current pixel is calculated by subtracting the camera position from the world position
-                //normalize(scene_pos - gbufferModelViewInverse[3].xyz), // Ray direction
-                localViewDir,
-
-                // Initialize results to default
+                rtPos + 0.004 * localNormal,
+                localReflectDir,
                 vec3(0), vec3(0), vec3(0), false
             );
 
-            // stop raytracing once the ray leaves the block
-            ray_constraint = ivec3(-9999);//ivec3(ray.origin);
+            ray_constraint = ivec3(-9999);
             trace_ray(ray);
 
             if (ray.result_hit) {
                 hit = true;
-                reflectColor = RGBToLinear(ray.result_color);
+                vec3 albedo = RGBToLinear(ray.result_color);
 
                 // TODO: replicate lighting
+                float hit_sky = get_result_sky_light(ray.result_normal) / 15.0;
+                vec2 lmcoord = vec2(0.0, hit_sky);
+
+                // TODO: sample shadows
+                float shadow = 1.0;
+
+                #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
+                    lmcoord = _pow3(lmcoord);
+
+//                    const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
+//                    vec3 blockLight = lmcoord.x * blockLightColor;
+                    vec3 blockLight = vec3(0.0);
+
+                    #ifdef LIGHTING_COLORED
+                        vec3 voxelPos = GetVoxelPosition(ray.result_position - cameraPosition);
+                        vec3 samplePos = GetFloodFillSamplePos(voxelPos, ray.result_normal);
+                        vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
+//                        blockLight = mix(blockLight, lpvSample, lpvFade);
+                        blockLight = lpvSample;
+                    #endif
+
+                    vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
+                    vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
+
+                    vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
+                    float skyLight_NoLm = max(dot(localSkyLightDir, ray.result_normal), 0.0);
+                    vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
+
+                    reflectColor = albedo * (blockLight + skyLight);
+                #else
+                    lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
+
+                    float sky_NoLM = dot(_pow2(ray.result_normal), vec3(0.6, 0.25 * ray.result_normal.y + 0.75, 0.8));
+                    lmcoord.y *= saturate(sky_NoLM);
+
+//                    #ifdef LIGHTING_COLORED
+//                        lmcoord.x *= 1.0 - lpvFade;
+//                    #endif
+
+                    lmcoord = LightMapTex(lmcoord);
+                    vec3 lit = textureLod(texLightmap, lmcoord, 0).rgb;
+                    lit = RGBToLinear(lit);
+
+                    #ifdef LIGHTING_COLORED
+                        vec3 voxelPos = GetVoxelPosition(ray.result_position - cameraPosition);
+                        vec3 samplePos = GetFloodFillSamplePos(voxelPos, ray.result_normal);
+//                        vec3 lpvSample = SampleFloodFill(samplePos, pow(vIn.lmcoord.x, 2.2));
+                        vec3 lpvSample = SampleFloodFill(samplePos); // lmcoord mask won't work here
+                        lit += lpvSample;// * lpvFade;
+                    #endif
+
+                    reflectColor = albedo * lit;
+//                    reflectColor *= tex_occlusion;
+                #endif
             }
         #else
             vec3 screenEnd = projectScreenTrace(viewPos, screenPos, reflectViewDir);
@@ -197,8 +267,9 @@ void main() {
             // reflectColor *= lmcoord_y; TODO
         }
 
-        float NoVm = max(dot(viewNormal, -viewDir), 0.0);
-        reflectColor *= pow(1.0 - NoVm, 5.0);
+        float f0 = mat_f0(specular_g);
+        float NoV = dot(viewNormal, -viewDir);
+        reflectColor *= F_schlick(NoV, f0, 1.0);
 
         reflectColor *= _pow2(smoothness);
 

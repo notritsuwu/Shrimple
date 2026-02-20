@@ -42,7 +42,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     vec2 lmcoord = parameters.lightMap;
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
-        lmcoord = pow(lmcoord, vec2(3.0));
+        lmcoord = _pow3(lmcoord);
 
         const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
         vec3 blockLight = lmcoord.x * blockLightColor;

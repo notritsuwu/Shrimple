@@ -80,6 +80,7 @@ uniform int vxRenderDistance;
 #include "/lib/sampling/lightmap.glsl"
 
 #ifdef MATERIAL_PBR_ENABLED
+    #include "/lib/fresnel.glsl"
     #include "/lib/material.glsl"
 #endif
 
@@ -172,6 +173,12 @@ void main() {
         if (vIn.blockId == BLOCK_WATER) {
             specularData = vec4(0.98, 0.02, 0.0, 0.0);
         }
+
+        // TODO: DEBUG ONLY!
+//        if (specularData.g >= 0.9) {
+//            color.rgb = vec3(1.0);
+//            specularData.rg = vec2(1.0);
+//        }
     #else
         vec3 localTexNormal = localGeoNormal;
         const float tex_occlusion = 1.0;
@@ -214,7 +221,7 @@ void main() {
 
     vec2 lmcoord = vIn.lmcoord;
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
-        lmcoord = pow(lmcoord, vec2(3.0));
+        lmcoord = _pow3(lmcoord);
 
         const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
         vec3 blockLight = lmcoord.x * blockLightColor;
@@ -229,7 +236,7 @@ void main() {
         vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
 
         float skyLight_NoLm = max(dot(localSkyLightDir, localTexNormal), 0.0);
-        vec3 skyLight = ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
+        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
 
@@ -269,8 +276,10 @@ void main() {
             float metalness = mat_metalness(specularData.g);
             color.rgb *= 1.0 - metalness * sqrt(smoothness);
 
-            float NoVm = max(dot(localTexNormal, -localViewDir), 0.0);
-            color.rgb *= 1.0 - pow(1.0 - NoVm, 5.0) * _pow2(smoothness);
+            float f0 = mat_f0(specularData.g);
+            float NoV = dot(localTexNormal, -localViewDir);
+
+            color.rgb *= 1.0 - F_schlick(NoV, f0, 1.0) * _pow2(smoothness);
         #endif
 
         float emission = mat_emission(specularData);

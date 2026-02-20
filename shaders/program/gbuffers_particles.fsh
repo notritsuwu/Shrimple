@@ -133,7 +133,7 @@ void main() {
 
     vec2 lmcoord = vIn.lmcoord;
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
-        lmcoord = pow(lmcoord, vec2(3.0));
+        lmcoord = _pow3(lmcoord);
 
         const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
         vec3 blockLight = lmcoord.x * blockLightColor;
@@ -147,7 +147,7 @@ void main() {
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
         vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
 
-        vec3 skyLight = (shadow*0.7 + 0.3) * skyLightColor;
+        vec3 skyLight = lmcoord.y * (shadow*0.7 + 0.3) * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
 

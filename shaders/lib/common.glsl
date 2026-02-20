@@ -78,6 +78,11 @@ const bool shadowHardwareFiltering = true;
 #define _pow3(x) (x*x*x)
 #define _saturate(x) (clamp(x, 0.0, 1.0))
 
+float pow5(const in float value) {
+    float sq = value*value;
+    return sq*sq * value;
+}
+
 float saturate(const in float x) {return _saturate(x);}
 vec2 saturate(const in vec2 x) {return _saturate(x);}
 vec3 saturate(const in vec3 x) {return _saturate(x);}
