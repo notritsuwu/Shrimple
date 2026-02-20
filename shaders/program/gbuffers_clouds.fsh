@@ -53,5 +53,8 @@ void main() {
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
     outFinal = color;
-    outReflect = uvec2(0);
+
+    #ifdef LIGHTING_REFLECT_ENABLED
+        outReflect = uvec2(0);
+    #endif
 }

@@ -71,7 +71,12 @@ screen.SHADOWS=Shadows
 
 option.SHADOWS_ENABLED=Enabled
 
+option.sunPathRotation=Rotation
+
 option.shadowMapResolution=Resolution
+
+option.shadowDistance=Distance
+suffix.shadowDistance=m
 
 
 screen.POST=Post-Processing
