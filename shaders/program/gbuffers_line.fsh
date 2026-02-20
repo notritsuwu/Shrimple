@@ -1,0 +1,87 @@
+#include "/lib/constants.glsl"
+#include "/lib/common.glsl"
+
+
+in VertexData {
+    flat vec4 color;
+    vec2 lmcoord;
+    vec2 texcoord;
+    vec3 localPos;
+} vIn;
+
+uniform sampler2D gtexture;
+uniform sampler2D lightmap;
+
+//uniform mat4 gbufferModelView;
+//uniform mat4 gbufferModelViewInverse;
+uniform vec3 cameraPosition;
+//uniform vec3 upPosition;
+//uniform float far;
+
+//uniform vec3 fogColor;
+//uniform float fogDensity;
+//uniform float fogStart;
+//uniform float fogEnd;
+//uniform int fogShape;
+//uniform int fogMode;
+
+uniform float alphaTestRef;
+uniform int renderStage;
+//uniform int isEyeInWater;
+//uniform vec3 skyColor;
+
+#include "/lib/sampling/lightmap.glsl"
+
+
+#ifdef LIGHTING_REFLECT_ENABLED
+    /* RENDERTARGETS: 0,1 */
+    layout(location = 0) out vec4 outFinal;
+    layout(location = 1) out uvec2 outReflect;
+#else
+    /* RENDERTARGETS: 0 */
+    layout(location = 0) out vec4 outFinal;
+#endif
+
+
+void main() {
+    vec4 color = vIn.color;
+    float emission = 0.0;
+
+    if (renderStage == MC_RENDER_STAGE_OUTLINE) {
+        const vec3 outlineColor = pow(vec3(BLOCK_OUTLINE_COLOR_R, BLOCK_OUTLINE_COLOR_G, BLOCK_OUTLINE_COLOR_B) / 255.0, vec3(2.2));
+
+        #if BLOCK_OUTLINE_TYPE == BLOCK_OUTLINE_CONSTRUCTION
+            const float interval = 16.0;
+            vec3 worldPos = vIn.localPos + cameraPosition;
+            float offset = sumOf(worldPos) * interval;
+            color.rgb = step(1.0, mod(offset, 2.0)) * outlineColor;
+        #else
+            color.rgb = outlineColor;
+        #endif
+
+        const float emissionF = MATERIAL_EMISSION_SCALE * BLOCK_OUTLINE_EMISSION * 0.01;
+
+        color.a = 1.0;
+        emission = emissionF;
+    }
+    else {
+        color *= texture(gtexture, vIn.texcoord);
+    }
+
+    if (color.a < alphaTestRef) {discard; return;}
+
+    color.rgb = RGBToLinear(color.rgb);
+
+    vec4 final = color;
+
+    vec2 lmFinal = LightMapTex(vIn.lmcoord);
+    vec3 lightmap = RGBToLinear(texture(lightmap, lmFinal).rgb);
+    final.rgb *= lightmap + emission;
+
+//    #ifdef SKY_BORDER_FOG_ENABLED
+//        vec3 localViewDir = normalize(vIn.localPos);
+//        ApplyFog(final, vIn.localPos, localViewDir);
+//    #endif
+
+    outFinal = final;
+}

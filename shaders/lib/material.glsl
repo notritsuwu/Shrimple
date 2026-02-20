@@ -1,7 +1,3 @@
-const float MATERIAL_EMISSION_POWER = 2.0;
-const float MATERIAL_EMISSION_SCALE = 16.0;
-
-
 vec3 mat_normal_lab(const in vec2 normalData) {
     vec2 normal_xy = fma(normalData.xy, vec2(2.0), vec2(-254.0/255.0));
     float normal_z = sqrt(max(1.0 - dot(normal_xy, normal_xy), 0.0));

@@ -7,6 +7,29 @@ screen.DEBUG=Shrimple
 option.DEBUG_WHITEWORLD=White-World
 
 
+screen.WORLD=World
+
+
+screen.WORLD_OUTLINE=Block Selection
+
+option.BLOCK_OUTLINE_TYPE=Type
+value.BLOCK_OUTLINE_TYPE.0=None
+value.BLOCK_OUTLINE_TYPE.1=Solid
+value.BLOCK_OUTLINE_TYPE.2=Caution
+
+option.BLOCK_OUTLINE_WIDTH=Width
+suffix.BLOCK_OUTLINE_WIDTH=px
+
+option.BLOCK_OUTLINE_EMISSION=Emission
+suffix.BLOCK_OUTLINE_EMISSION=%
+
+option.BLOCK_OUTLINE_COLOR_R=Color Red
+
+option.BLOCK_OUTLINE_COLOR_G=Color Green
+
+option.BLOCK_OUTLINE_COLOR_B=Color Blue
+
+
 screen.MATERIAL=Materials/PBR
 
 option.MATERIAL_FORMAT=Format
