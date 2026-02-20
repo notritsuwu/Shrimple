@@ -18,9 +18,13 @@ uniform float farPlane;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
 uniform int isEyeInWater;
+uniform vec3 cameraPosition;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
+
+//uniform vec3 camera_position;
+uniform int frameCounter;
 
 uniform vec2 taa_offset = vec2(0.0);
 
@@ -30,6 +34,11 @@ uniform vec2 taa_offset = vec2(0.0);
 #include "/lib/oklab.glsl"
 #include "/lib/fog.glsl"
 #include "/lib/material.glsl"
+
+#ifdef PHOTONICS
+    #include "/photonics/photonics.glsl"
+    #include "/photonics/ph_raytracing.glsl"
+#endif
 
 
 vec3 projectToScreenBounds(const in vec3 screenPos, const in vec3 screenDir) {
@@ -87,70 +96,105 @@ void main() {
         float roughness = mat_roughness(specular_r);
         float smoothness = 1.0 - roughness;
 
+
         vec3 reflectViewDir = normalize(reflect(viewDir, viewNormal));
 
-        vec3 screenEnd = projectScreenTrace(viewPos, screenPos, reflectViewDir);
-        vec3 traceClipEnd = screenEnd * 2.0 - 1.0;
-        vec3 traceClipStart = ndcPos;
 
-        vec3 traceClipPos;
-        vec3 traceClipPos_prev = traceClipStart;
-        vec2 traceScreenPos;
+        bool hit;
+        #ifdef PHOTONICS
+            vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
+            vec3 localViewDir = normalize(localPos);
+            vec3 rtPos = localPos + camera_position;
 
-        bool hit = false;
-        float dither = 0.5;//GetBayerValue(uv);
-        for (uint i = 0; i < MATERIAL_REFLECT_STEPS; i++) {
-            float f = (i + dither) / float(MATERIAL_REFLECT_STEPS);
-            traceClipPos = mix(traceClipStart, traceClipEnd, saturate(f));
-            traceScreenPos = traceClipPos.xy * 0.5 + 0.5;
-            if (saturate(traceScreenPos) != traceScreenPos) break;
+            vec3 localNormal = mat3(gbufferModelViewInverse) * viewNormal;
 
-            float sampleClipDepth = textureLod(depthtex0, traceScreenPos, 0).r * 2.0 - 1.0;
-            float screenDepthL = linearizeDepth(sampleClipDepth, near, farPlane);
-            float traceDepthL = linearizeDepth(traceClipPos.z, near, farPlane);
+            RayJob ray = RayJob(
+                // Translates from world space to rt space
+                // The offset along the normal is very important to ensure that the ray doesn't start outside the block
+                rtPos - 0.001 * localNormal, // Ray origin
 
-            if (screenDepthL < traceDepthL) {
+                // View direction of the current pixel is calculated by subtracting the camera position from the world position
+                //normalize(scene_pos - gbufferModelViewInverse[3].xyz), // Ray direction
+                localViewDir,
+
+                // Initialize results to default
+                vec3(0), vec3(0), vec3(0), false
+            );
+
+            // stop raytracing once the ray leaves the block
+            ray_constraint = ivec3(-9999);//ivec3(ray.origin);
+            trace_ray(ray);
+
+            if (ray.result_hit) {
                 hit = true;
-                break;
+                reflectColor = RGBToLinear(ray.result_color);
+
+                // TODO: replicate lighting
             }
+        #else
+            vec3 screenEnd = projectScreenTrace(viewPos, screenPos, reflectViewDir);
+            vec3 traceClipEnd = screenEnd * 2.0 - 1.0;
+            vec3 traceClipStart = ndcPos;
 
-            traceClipPos_prev = traceClipPos;
-            // traceDepthL_prev = traceDepthL;
-        }
+            vec3 traceClipPos;
+            vec3 traceClipPos_prev = traceClipStart;
+            vec2 traceScreenPos;
 
-        if (hit) {
-            traceClipStart = traceClipPos_prev;
-            traceClipEnd = traceClipPos;
-
-            for (uint i = 0; i <= MATERIAL_REFLECT_REFINE_STEPS; i++) {
-                float f = (i + dither) / float(MATERIAL_REFLECT_REFINE_STEPS);
+            bool hit = false;
+            float dither = 0.5;//GetBayerValue(uv);
+            for (uint i = 0; i < MATERIAL_REFLECT_STEPS; i++) {
+                float f = (i + dither) / float(MATERIAL_REFLECT_STEPS);
                 traceClipPos = mix(traceClipStart, traceClipEnd, saturate(f));
-                vec2 testPos = traceClipPos.xy * 0.5 + 0.5;
-                if (saturate(testPos) != testPos) break;
+                traceScreenPos = traceClipPos.xy * 0.5 + 0.5;
+                if (saturate(traceScreenPos) != traceScreenPos) break;
 
-                float sampleClipDepth = textureLod(depthtex0, testPos, 0).r * 2.0 - 1.0;
+                float sampleClipDepth = textureLod(depthtex0, traceScreenPos, 0).r * 2.0 - 1.0;
                 float screenDepthL = linearizeDepth(sampleClipDepth, near, farPlane);
                 float traceDepthL = linearizeDepth(traceClipPos.z, near, farPlane);
 
                 if (screenDepthL < traceDepthL) {
+                    hit = true;
                     break;
                 }
 
-                traceScreenPos = testPos;
+                traceClipPos_prev = traceClipPos;
+                // traceDepthL_prev = traceDepthL;
             }
-        }
 
-//        hit = false;
-        if (hit) {
-    //        float roughL = _pow2(roughness);
-            float mip = roughness * 4.0;
+            if (hit) {
+                traceClipStart = traceClipPos_prev;
+                traceClipEnd = traceClipPos;
 
-            reflectColor = textureLod(TEX_FINAL, traceScreenPos, mip).rgb;
-        }
-        else {
+                for (uint i = 0; i <= MATERIAL_REFLECT_REFINE_STEPS; i++) {
+                    float f = (i + dither) / float(MATERIAL_REFLECT_REFINE_STEPS);
+                    traceClipPos = mix(traceClipStart, traceClipEnd, saturate(f));
+                    vec2 testPos = traceClipPos.xy * 0.5 + 0.5;
+                    if (saturate(testPos) != testPos) break;
+
+                    float sampleClipDepth = textureLod(depthtex0, testPos, 0).r * 2.0 - 1.0;
+                    float screenDepthL = linearizeDepth(sampleClipDepth, near, farPlane);
+                    float traceDepthL = linearizeDepth(traceClipPos.z, near, farPlane);
+
+                    if (screenDepthL < traceDepthL) {
+                        break;
+                    }
+
+                    traceScreenPos = testPos;
+                }
+            }
+
+            if (hit) {
+                // float roughL = _pow2(roughness);
+                float mip = roughness * 4.0;
+
+                reflectColor = textureLod(TEX_FINAL, traceScreenPos, mip).rgb;
+            }
+        #endif
+
+        if (!hit) {
             vec3 reflectLocalDir = mat3(gbufferModelViewInverse) * reflectViewDir;
             reflectColor = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), reflectLocalDir.y);
-//            reflectColor *= lmcoord_y; TODO
+            // reflectColor *= lmcoord_y; TODO
         }
 
         float NoVm = max(dot(viewNormal, -viewDir), 0.0);

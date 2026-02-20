@@ -37,6 +37,8 @@ out VertexData {
 } vOut;
 
 
+uniform int heldBlockLightValue;
+uniform int heldBlockLightValue2;
 uniform mat4 gbufferModelViewInverse;
 
 #ifdef TAA_ENABLED
@@ -69,6 +71,14 @@ void main() {
     vec3 viewPos = mul3(gl_ModelViewMatrix, gl_Vertex.xyz);
     vOut.localPos = mul3(gbufferModelViewInverse, viewPos);
     gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
+
+    #if defined(LIGHTING_HAND) && LIGHTING_MODE == LIGHTING_MODE_VANILLA && !defined(LIGHTING_COLORED)
+        float dist = length(viewPos);
+
+        float handLightLevel = max(heldBlockLightValue, heldBlockLightValue2);
+        float handLightF = 1.0 - saturate(dist / handLightLevel);
+        vOut.lmcoord.x = max(vOut.lmcoord.x, handLightF);
+    #endif
 
     #ifdef TAA_ENABLED
         gl_Position.xy += taa_offset * (2.0 * gl_Position.w);

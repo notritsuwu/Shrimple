@@ -30,6 +30,21 @@ option.BLOCK_OUTLINE_COLOR_G=Color Green
 option.BLOCK_OUTLINE_COLOR_B=Color Blue
 
 
+screen.WORLD_OVERWORLD=Overworld
+
+option.OVERWORLD_NIGHT_BRIGHTNESS=Night Brightness
+suffix.OVERWORLD_NIGHT_BRIGHTNESS=%
+
+
+screen.WORLD_NETHER=Nether
+
+option.NETHER_BRIGHTNESS=Brightness
+suffix.NETHER_BRIGHTNESS=%
+
+
+screen.WORLD_END=End
+
+
 screen.MATERIAL=Materials/PBR
 
 option.MATERIAL_FORMAT=Format
@@ -58,6 +73,8 @@ screen.LIGHTING=Lighting
 option.LIGHTING_MODE=Mode
 value.LIGHTING_MODE.0=Vanilla
 value.LIGHTING_MODE.1=Enhanced
+
+option.LIGHTING_HAND=Hand Light
 
 option.LIGHTING_COLORED=Colored
 

@@ -59,6 +59,10 @@ uniform int vxRenderDistance;
     #include "/lib/material.glsl"
 #endif
 
+#if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
+    #include "/lib/enhanced-lighting.glsl"
+#endif
+
 #ifdef LIGHTING_COLORED
     #include "/lib/voxel.glsl"
     #include "/lib/floodfill-render.glsl"
@@ -140,12 +144,10 @@ void main() {
             blockLight = mix(blockLight, lpvSample, lpvFade);
         #endif
 
-        const vec3 skyLightColor = pow(vec3(0.961, 0.925, 0.843), vec3(2.2));
-
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
-        float dayF = smoothstep(-0.15, 0.05, localSunLightDir.y);
-        float skyLightBrightness = mix(0.02, 1.00, dayF);
-        vec3 skyLight = lmcoord.y * (shadow*0.7 + 0.3) * skyLightBrightness * skyLightColor;
+        vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
+
+        vec3 skyLight = (shadow*0.7 + 0.3) * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
 
