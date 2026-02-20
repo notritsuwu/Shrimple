@@ -103,11 +103,16 @@ uniform int vxRenderDistance;
     #include "/lib/shadows.glsl"
 #endif
 
+#ifdef LIGHTING_REFLECT_ENABLED
+    #include "/lib/octohedral.glsl"
+#endif
+
 
 #ifdef LIGHTING_REFLECT_ENABLED
-    /* RENDERTARGETS: 0,1 */
+    /* RENDERTARGETS: 0,1,2 */
     layout(location = 0) out vec4 outFinal;
-    layout(location = 1) out uvec2 outReflect;
+    layout(location = 1) out uint outReflectNormal;
+    layout(location = 2) out uvec2 outReflectSpecular;
 #else
     /* RENDERTARGETS: 0 */
     layout(location = 0) out vec4 outFinal;
@@ -320,8 +325,10 @@ void main() {
     #ifdef LIGHTING_REFLECT_ENABLED
         vec3 viewNormal = mat3(gbufferModelView) * localTexNormal;
 
-        outReflect = uvec2(
-            packUnorm4x8(vec4(LinearToRGB(albedo), specularData.r)),
-            packUnorm4x8(vec4(viewNormal * 0.5 + 0.5, specularData.g)));
+        outReflectNormal = packUnorm2x16(OctEncode(viewNormal));
+
+        outReflectSpecular = uvec2(
+            packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord.y)),
+            packUnorm4x8(specularData));
     #endif
 }

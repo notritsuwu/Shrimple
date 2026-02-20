@@ -11,7 +11,8 @@ in vec2 texcoord;
 
 uniform sampler2D depthtex0;
 uniform sampler2D TEX_FINAL;
-uniform usampler2D TEX_REFLECT_DATA;
+uniform usampler2D TEX_REFLECT_NORMAL;
+uniform usampler2D TEX_REFLECT_SPECULAR;
 
 #ifdef PHOTONICS
     uniform sampler2D texLightmap;
@@ -33,9 +34,6 @@ uniform vec3 shadowLightPosition;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
-
-//uniform vec3 camera_position;
-//uniform vec3 world_offset;
 uniform int frameCounter;
 
 uniform vec2 taa_offset = vec2(0.0);
@@ -43,6 +41,7 @@ uniform vec2 taa_offset = vec2(0.0);
 
 #include "/lib/hsv.glsl"
 #include "/lib/oklab.glsl"
+#include "/lib/octohedral.glsl"
 #include "/lib/sampling/bayer.glsl"
 #include "/lib/sampling/depth.glsl"
 #include "/lib/sampling/lightmap.glsl"
@@ -107,16 +106,18 @@ void main() {
         vec3 viewPos = project(gbufferProjectionInverse, ndcPos);
         vec3 viewDir = normalize(viewPos);
 
-        uvec2 reflectData = texelFetch(TEX_REFLECT_DATA, uv, 0).rg;
+        uint reflectNormalData = texelFetch(TEX_REFLECT_NORMAL, uv, 0).r;
+        vec3 viewNormal = OctDecode(unpackUnorm2x16(reflectNormalData));
+
+        uvec2 reflectData = texelFetch(TEX_REFLECT_SPECULAR, uv, 0).rg;
         vec4 reflectDataR = unpackUnorm4x8(reflectData.r);
-        vec4 reflectDataG = unpackUnorm4x8(reflectData.g);
+        vec4 specularData = unpackUnorm4x8(reflectData.g);
 
-        float specular_r = reflectDataR.a;
+//        vec3 viewNormal = normalize(reflectDataG.xyz * 2.0 - 1.0);
+//        float specular_g = reflectDataG.w;
 
-        vec3 viewNormal = normalize(reflectDataG.xyz * 2.0 - 1.0);
-        float specular_g = reflectDataG.w;
-
-        float roughness = mat_roughness(specular_r);
+        float lmcoord_y = reflectDataR.w;
+        float roughness = mat_roughness(specularData.r);
         float smoothness = 1.0 - roughness;
 
 
@@ -137,14 +138,12 @@ void main() {
                 vec3(0), vec3(0), vec3(0), false
             );
 
-            ray_constraint = ivec3(-9999);
             trace_ray(ray);
 
             if (ray.result_hit) {
                 hit = true;
                 vec3 albedo = RGBToLinear(ray.result_color);
 
-                // TODO: replicate lighting
                 float hit_sky = get_result_sky_light(ray.result_normal) / 15.0;
                 vec2 lmcoord = vec2(0.0, hit_sky);
 
@@ -154,15 +153,13 @@ void main() {
                 #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
                     lmcoord = _pow3(lmcoord);
 
-//                    const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
-//                    vec3 blockLight = lmcoord.x * blockLightColor;
+                    // block lightmap coord not supported
                     vec3 blockLight = vec3(0.0);
 
                     #ifdef LIGHTING_COLORED
                         vec3 voxelPos = GetVoxelPosition(ray.result_position - (cameraPosition - world_offset));
                         vec3 samplePos = GetFloodFillSamplePos(voxelPos, ray.result_normal);
                         vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
-//                        blockLight = mix(blockLight, lpvSample, lpvFade);
                         blockLight = lpvSample;
                     #endif
 
@@ -180,10 +177,6 @@ void main() {
                     float sky_NoLM = dot(_pow2(ray.result_normal), vec3(0.6, 0.25 * ray.result_normal.y + 0.75, 0.8));
                     lmcoord.y *= saturate(sky_NoLM);
 
-//                    #ifdef LIGHTING_COLORED
-//                        lmcoord.x *= 1.0 - lpvFade;
-//                    #endif
-
                     lmcoord = LightMapTex(lmcoord);
                     vec3 lit = textureLod(texLightmap, lmcoord, 0).rgb;
                     lit = RGBToLinear(lit);
@@ -191,13 +184,11 @@ void main() {
                     #ifdef LIGHTING_COLORED
                         vec3 voxelPos = GetVoxelPosition(ray.result_position - cameraPosition);
                         vec3 samplePos = GetFloodFillSamplePos(voxelPos, ray.result_normal);
-//                        vec3 lpvSample = SampleFloodFill(samplePos, pow(vIn.lmcoord.x, 2.2));
                         vec3 lpvSample = SampleFloodFill(samplePos); // lmcoord mask won't work here
-                        lit += lpvSample;// * lpvFade;
+                        lit += lpvSample;
                     #endif
 
                     reflectColor = albedo * lit;
-//                    reflectColor *= tex_occlusion;
                 #endif
             }
         #else
@@ -262,17 +253,17 @@ void main() {
         if (!hit) {
             vec3 reflectLocalDir = mat3(gbufferModelViewInverse) * reflectViewDir;
             reflectColor = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), reflectLocalDir.y);
-            // reflectColor *= lmcoord_y; TODO
+            reflectColor *= lmcoord_y;
         }
 
-        float f0 = mat_f0(specular_g);
+        float f0 = mat_f0(specularData.g);
         float NoV = dot(viewNormal, -viewDir);
         reflectColor *= F_schlick(NoV, f0, 1.0);
 
         reflectColor *= _pow2(smoothness);
 
         vec3 albedo = RGBToLinear(reflectDataR.rgb);
-        float metalness = mat_metalness(specular_g);
+        float metalness = mat_metalness(specularData.g);
         vec3 tint = mix(vec3(1.0), albedo, metalness);
         reflectColor *= tint;
     }

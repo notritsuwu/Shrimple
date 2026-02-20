@@ -1,6 +1,7 @@
 /*
 const int colortex0Format  = RGBA16F;
-const int colortex1Format  = RG32UI;
+const int colortex1Format  = R32UI;
+const int colortex2Format  = RG32UI;
 const int colortex5Format  = RGBA16F;
 */
 
@@ -97,6 +98,7 @@ float maxOf(const in vec3 vec) {return max(max(vec[0], vec[1]), vec[2]);}
 
 int sumOf(ivec2 vec) {return vec.x + vec.y;}
 int sumOf(ivec3 vec) {return vec.x + vec.y + vec.z;}
+float sumOf(vec2 vec) {return vec.x + vec.y;}
 float sumOf(vec3 vec) {return vec.x + vec.y + vec.z;}
 
 float luminance(const in vec3 color) {
