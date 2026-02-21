@@ -8,18 +8,21 @@ const ivec3 workGroups = ivec3(32, 32, 1);
 layout(rgba8) uniform writeonly image2D imgBlockLight;
 
 #include "/lib/blocks.glsl"
+#include "/lib/items.glsl"
 
 
 const vec3 color_White = vec3(255);
 const vec3 color_Amethyst = vec3(118, 58, 201);
 const vec3 color_Candle = vec3(230, 144, 76);
 const vec3 color_CopperBulb = vec3(230, 204, 128);
+const vec3 color_CopperTorch = vec3(126, 230, 25);
 const vec3 color_Fire = vec3(220, 152, 89);
 const vec3 color_Furnace = vec3(196, 159, 114);
 const vec3 color_RedstoneTorch = vec3(232, 59, 21);
 const vec3 color_RespawnAnchor = vec3(99, 17, 165);
 const vec3 color_SeaPickle = vec3(72, 100, 54);
 const vec3 color_SoulFire = vec3(25, 184, 229);
+const vec3 color_Torch = vec3(245, 117, 66);
 
 const vec3 color_CandleBlack = vec3(51, 51, 51);
 const vec3 color_CandleBlue = vec3(0, 66, 255);
@@ -160,7 +163,7 @@ void main() {
         case BLOCK_COPPER_TORCH_WALL_E:
         case BLOCK_COPPER_TORCH_WALL_S:
         case BLOCK_COPPER_TORCH_WALL_W:
-            color = vec3(126, 230, 25);
+            color = vec3(color_CopperTorch);
             range = 14;
             break;
         case BLOCK_CREAKING_HEART:
@@ -228,7 +231,7 @@ void main() {
             range = 12;
             break;
         case BLOCK_LAVA:
-            color = vec3(245, 117, 66);
+            color = vec3(color_Torch);
             range = 15;
             break;
         case BLOCK_LIGHTING_ROD_POWERED:
@@ -395,7 +398,7 @@ void main() {
         case BLOCK_TORCH_WALL_E:
         case BLOCK_TORCH_WALL_S:
         case BLOCK_TORCH_WALL_W:
-            color = vec3(245, 117, 66);
+            color = vec3(color_Torch);
             range = 12;
             break;
     }
@@ -769,7 +772,25 @@ void main() {
         }
     #endif
 
-    // TODO: pre-add 0.5?
+    switch (blockId) {
+        case ITEM_TORCH:
+            color = vec3(color_Torch);
+            range = 12;
+            break;
+        case ITEM_COPPER_TORCH:
+            color = vec3(color_CopperTorch);
+            range = 14;
+            break;
+        case ITEM_SOUL_TORCH:
+            color = color_SoulFire;
+            range = 10;
+            break;
+        case ITEM_REDSTONE_TORCH:
+            color = color_RedstoneTorch;
+            range = 7;
+            break;
+    }
+
     vec4 data = vec4(color / 255.0, range / 32.0);
     imageStore(imgBlockLight, ivec2(gl_GlobalInvocationID.xy), data);
 }

@@ -10,7 +10,11 @@ out VertexData {
 } vOut;
 
 
+uniform int heldBlockLightValue;
+uniform int heldBlockLightValue2;
 uniform mat4 gbufferModelViewInverse;
+uniform bool firstPersonCamera;
+uniform vec3 relativeEyePosition;
 
 #ifdef TAA_ENABLED
     uniform vec2 taa_offset = vec2(0.0);
@@ -18,6 +22,10 @@ uniform mat4 gbufferModelViewInverse;
 
 
 #include "/lib/sampling/lightmap.glsl"
+
+#ifdef LIGHTING_HAND
+    #include "/lib/hand-light.glsl"
+#endif
 
 
 void main() {
@@ -33,5 +41,13 @@ void main() {
 
     #ifdef TAA_ENABLED
         gl_Position.xy += taa_offset * (2.0 * gl_Position.w);
+    #endif
+
+    #if defined(LIGHTING_HAND) && LIGHTING_MODE == LIGHTING_MODE_VANILLA && !defined(LIGHTING_COLORED)
+        float handDist = GetHandDistance(vOut.localPos);
+
+        float handLightLevel = max(heldBlockLightValue, heldBlockLightValue2);
+        float handLight = max(handLightLevel - handDist, 0.0) / 15.0;
+        vOut.lmcoord.x = max(vOut.lmcoord.x, handLight);
     #endif
 }

@@ -41,15 +41,19 @@ uniform sampler2D gtexture;
     uniform sampler2D lightmap;
 #endif
 
+#ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
+    uniform sampler2DShadow shadowtex1HW;
+#else
+    uniform sampler2D shadowtex1;
+#endif
+
 #ifdef LIGHTING_COLORED
     uniform sampler3D texFloodFillA;
     uniform sampler3D texFloodFillB;
 #endif
 
-#ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
-    uniform sampler2DShadow shadowtex1HW;
-#else
-    uniform sampler2D shadowtex1;
+#if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED)
+    uniform sampler2D texBlockLight;
 #endif
 
 uniform float far;
@@ -59,6 +63,8 @@ uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
 uniform vec4 entityColor;
+uniform int heldBlockLightValue;
+uniform int heldBlockLightValue2;
 uniform float alphaTestRef;
 uniform vec3 sunPosition;
 uniform vec3 shadowLightPosition;
@@ -68,7 +74,11 @@ uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
 uniform int frameCounter;
+uniform bool firstPersonCamera;
+uniform vec3 relativeEyePosition;
 uniform int isEyeInWater;
+uniform int heldItemId;
+uniform int heldItemId2;
 uniform ivec2 atlasSize;
 uniform vec2 viewSize;
 
@@ -108,6 +118,14 @@ uniform int vxRenderDistance;
 
 #ifdef LIGHTING_REFLECT_ENABLED
     #include "/lib/octohedral.glsl"
+#endif
+
+#ifdef LIGHTING_HAND
+    #include "/lib/hand-light.glsl"
+
+    #ifdef PHOTONICS_LIGHT_ENABLED
+        #include "/photonics/photonics.glsl"
+    #endif
 #endif
 
 
@@ -233,6 +251,23 @@ void main() {
     #endif
 
     vec2 lmcoord = vIn.lmcoord;
+
+    #ifdef LIGHTING_HAND
+        vec3 handLightPos = GetHandLightPosition();
+        float handDist = distance(vIn.localPos, handLightPos);
+    #endif
+
+    #if defined(LIGHTING_HAND) && !defined(LIGHTING_COLORED)
+        float handLightLevel = max(heldBlockLightValue, heldBlockLightValue2);
+        float handLight = max(handLightLevel - handDist, 0.0) / 15.0;
+
+        #ifdef PHOTONICS_LIGHT_ENABLED
+            // TODO: block light if trace hit
+        #endif
+
+        lmcoord.x = max(lmcoord.x, handLight);
+    #endif
+
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         lmcoord = _pow3(lmcoord);
 
@@ -283,12 +318,49 @@ void main() {
         color.rgb *= tex_occlusion;
     #endif
 
-    #ifdef LIGHTING_HAND
+    #if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED)
+        float handLight1 = max(heldBlockLightValue  - handDist, 0.0) / 15.0;
+        float handLight2 = max(heldBlockLightValue2 - handDist, 0.0) / 15.0;
+
+        vec3 handLightColor1 = vec3(1.0);
+        if (heldItemId >= 0) {
+            ivec2 blockLightUV1 = ivec2(heldItemId % 256, heldItemId / 256);
+            vec4 lightColorRange1 = texelFetch(texBlockLight, blockLightUV1, 0);
+            handLightColor1 = RGBToLinear(lightColorRange1.rgb);
+        }
+
+        vec3 handLightColor2 = vec3(1.0);
+        if (heldItemId2 >= 0) {
+            ivec2 blockLightUV2 = ivec2(heldItemId2 % 256, heldItemId2 / 256);
+            vec4 lightColorRange2 = texelFetch(texBlockLight, blockLightUV2, 0);
+            handLightColor2 = RGBToLinear(lightColorRange2.rgb);
+        }
+
+        vec3 lightDir = normalize(vIn.localPos - handLightPos);
+
         #ifdef PHOTONICS_LIGHT_ENABLED
-            // TODO
-        #else
-            // TODO
+            // TODO: block light if trace hit
+            // handLightPos
+            vec3 rtOrigin = handLightPos + (cameraPosition - world_offset);
+
+            if (heldBlockLightValue > 0) {
+                RayJob ray = RayJob(rtOrigin, lightDir,
+                    vec3(0), vec3(0), vec3(0), false);
+
+                trace_ray(ray, true);
+
+                if (ray.result_hit && distance(rtOrigin, ray.result_position) < handDist - 0.001) {
+                    handLight1 = 0.0;
+                }
+            }
+
+            if (heldBlockLightValue2 > 0) {
+                // TODO
+            }
         #endif
+
+        float NoLm = max(dot(localTexNormal, -lightDir), 0.0);
+        color.rgb += albedo * NoLm * (_pow2(handLight1) * handLightColor1 + _pow2(handLight2) * handLightColor2);
     #endif
 
     #ifdef LIGHTING_REFLECT_ENABLED

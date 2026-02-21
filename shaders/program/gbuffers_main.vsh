@@ -38,6 +38,8 @@ out VertexData {
 uniform int heldBlockLightValue;
 uniform int heldBlockLightValue2;
 uniform mat4 gbufferModelViewInverse;
+uniform bool firstPersonCamera;
+uniform vec3 relativeEyePosition;
 
 #ifdef TAA_ENABLED
     uniform vec2 taa_offset = vec2(0.0);
@@ -49,6 +51,10 @@ uniform mat4 gbufferModelViewInverse;
 
 #ifdef MATERIAL_PARALLAX_ENABLED
     #include "/lib/sampling/atlas.glsl"
+#endif
+
+#ifdef LIGHTING_HAND
+    #include "/lib/hand-light.glsl"
 #endif
 
 
@@ -70,16 +76,16 @@ void main() {
     vOut.localPos = mul3(gbufferModelViewInverse, viewPos);
     gl_Position = gl_ProjectionMatrix * vec4(viewPos, 1.0);
 
-    #if defined(LIGHTING_HAND) && LIGHTING_MODE == LIGHTING_MODE_VANILLA && !defined(LIGHTING_COLORED)
-        float dist = length(viewPos);
-
-        float handLightLevel = max(heldBlockLightValue, heldBlockLightValue2);
-        float handLightF = 1.0 - saturate(dist / handLightLevel);
-        vOut.lmcoord.x = max(vOut.lmcoord.x, handLightF);
-    #endif
-
     #ifdef TAA_ENABLED
         gl_Position.xy += taa_offset * (2.0 * gl_Position.w);
+    #endif
+
+    #if defined(LIGHTING_HAND) && LIGHTING_MODE == LIGHTING_MODE_VANILLA && !defined(LIGHTING_COLORED)
+        float handDist = GetHandDistance(vOut.localPos);
+
+        float handLightLevel = max(heldBlockLightValue, heldBlockLightValue2);
+        float handLight = max(handLightLevel - handDist, 0.0) / 15.0;
+        vOut.lmcoord.x = max(vOut.lmcoord.x, handLight);
     #endif
 
     #ifdef MATERIAL_PBR_ENABLED
