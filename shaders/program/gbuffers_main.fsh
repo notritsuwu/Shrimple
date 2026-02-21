@@ -283,6 +283,14 @@ void main() {
         color.rgb *= tex_occlusion;
     #endif
 
+    #ifdef LIGHTING_HAND
+        #ifdef PHOTONICS_LIGHT_ENABLED
+            // TODO
+        #else
+            // TODO
+        #endif
+    #endif
+
     #ifdef LIGHTING_REFLECT_ENABLED
         #ifdef MATERIAL_PBR_ENABLED
             float smoothness = 1.0 - mat_roughness(specularData.r);

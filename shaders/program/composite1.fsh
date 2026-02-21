@@ -14,12 +14,18 @@ uniform sampler2D TEX_FINAL;
 uniform usampler2D TEX_REFLECT_NORMAL;
 uniform usampler2D TEX_REFLECT_SPECULAR;
 
-#ifdef PHOTONICS
+#ifdef PHOTONICS_REFLECT_ENABLED
     uniform sampler2D texLightmap;
 
     #ifdef LIGHTING_COLORED
         uniform sampler3D texFloodFillA;
         uniform sampler3D texFloodFillB;
+    #endif
+
+    #ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
+        uniform sampler2DShadow shadowtex1HW;
+    #else
+        uniform sampler2D shadowtex1;
     #endif
 #endif
 
@@ -35,6 +41,8 @@ uniform vec3 shadowLightPosition;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
+uniform mat4 shadowModelView;
+uniform mat4 shadowProjection;
 uniform int frameCounter;
 
 uniform vec2 taa_offset = vec2(0.0);
@@ -50,8 +58,12 @@ uniform vec2 taa_offset = vec2(0.0);
 #include "/lib/fresnel.glsl"
 #include "/lib/material.glsl"
 
-#ifdef PHOTONICS
+#ifdef PHOTONICS_REFLECT_ENABLED
     #include "/photonics/photonics.glsl"
+
+    #ifdef SHADOWS_ENABLED
+        #include "/lib/shadows.glsl"
+    #endif
 
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         #include "/lib/enhanced-lighting.glsl"
@@ -87,7 +99,7 @@ vec3 projectScreenTrace(const in vec3 viewPos, const in vec3 screenPos, const in
     return projectToScreenBounds(screenPos, screenDir);
 }
 
-#ifdef PHOTONICS
+#ifdef PHOTONICS_REFLECT_ENABLED
     #PH_USE_CUSTOM_ALPHA
     #PH_ALPHA_FUNC(color) apply_tint_impl(color)
 
@@ -125,9 +137,6 @@ void main() {
         vec4 reflectDataR = unpackUnorm4x8(reflectData.r);
         vec4 specularData = unpackUnorm4x8(reflectData.g);
 
-//        vec3 viewNormal = normalize(reflectDataG.xyz * 2.0 - 1.0);
-//        float specular_g = reflectDataG.w;
-
         float lmcoord_y = reflectDataR.w;
 
         #ifdef MATERIAL_PBR_ENABLED
@@ -142,12 +151,10 @@ void main() {
 
         float smoothness = 1.0 - roughness;
 
-
         vec3 reflectViewDir = normalize(reflect(viewDir, viewNormal));
 
-
         bool hit = false;
-        #ifdef PHOTONICS
+        #ifdef PHOTONICS_REFLECT_ENABLED
             vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
             vec3 rtPos = localPos + (cameraPosition - world_offset);
 
@@ -166,11 +173,37 @@ void main() {
                 hit = true;
                 vec3 albedo = RGBToLinear(ray.result_color);
 
-                float hit_sky = get_result_sky_light(ray.result_normal) / 15.0;
+                vec3 hitLocalPos = ray.result_position - (cameraPosition - world_offset);
+                vec3 hitLocalNormal = ray.result_normal;
+
+                float hit_sky = get_result_sky_light(hitLocalNormal) / 15.0;
                 vec2 lmcoord = vec2(0.0, hit_sky);
 
-                // TODO: sample shadows
+                vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
+
                 float shadow = 1.0;
+                #ifdef SHADOWS_ENABLED
+                    float hitViewDist = length(hitLocalPos);
+
+                    vec3 shadowPos = hitLocalPos;
+                    shadowPos += 0.08 * hitLocalNormal;
+                    shadowPos = mul3(shadowModelView, shadowPos);
+                    shadowPos.z += 0.032 * hitViewDist;
+                    shadowPos = (shadowProjection * vec4(shadowPos, 1.0)).xyz;
+
+                    distort(shadowPos.xy);
+                    shadowPos = shadowPos * 0.5 + 0.5;
+
+                    #ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
+                        shadow = texture(shadowtex1HW, shadowPos).r;
+                    #else
+                        float shadowDepth = textureLod(shadowtex1, shadowPos.xy, 0).r;
+                        shadow = step(shadowPos.z, shadowDepth);
+                    #endif
+
+                    float shadow_NoL = dot(hitLocalNormal, localSkyLightDir);
+                    shadow *= pow(saturate(shadow_NoL), 0.2);
+                #endif
 
                 #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
                     lmcoord = _pow3(lmcoord);
@@ -179,8 +212,8 @@ void main() {
                     vec3 blockLight = vec3(0.0);
 
                     #ifdef LIGHTING_COLORED
-                        vec3 voxelPos = GetVoxelPosition(ray.result_position - (cameraPosition - world_offset));
-                        vec3 samplePos = GetFloodFillSamplePos(voxelPos, ray.result_normal);
+                        vec3 voxelPos = GetVoxelPosition(hitLocalPos);
+                        vec3 samplePos = GetFloodFillSamplePos(voxelPos, hitLocalNormal);
                         vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
                         blockLight = lpvSample;
                     #endif
@@ -188,15 +221,14 @@ void main() {
                     vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
                     vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
 
-                    vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
-                    float skyLight_NoLm = max(dot(localSkyLightDir, ray.result_normal), 0.0);
+                    float skyLight_NoLm = max(dot(localSkyLightDir, hitLocalNormal), 0.0);
                     vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
 
                     reflectColor = albedo * (blockLight + skyLight);
                 #else
                     lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
-                    float sky_NoLM = dot(_pow2(ray.result_normal), vec3(0.6, 0.25 * ray.result_normal.y + 0.75, 0.8));
+                    float sky_NoLM = dot(_pow2(hitLocalNormal), vec3(0.6, 0.25 * hitLocalNormal.y + 0.75, 0.8));
                     lmcoord.y *= saturate(sky_NoLM);
 
                     lmcoord = LightMapTex(lmcoord);
@@ -204,8 +236,8 @@ void main() {
                     lit = RGBToLinear(lit);
 
                     #ifdef LIGHTING_COLORED
-                        vec3 voxelPos = GetVoxelPosition(ray.result_position - cameraPosition);
-                        vec3 samplePos = GetFloodFillSamplePos(voxelPos, ray.result_normal);
+                        vec3 voxelPos = GetVoxelPosition(hitLocalPos);
+                        vec3 samplePos = GetFloodFillSamplePos(voxelPos, hitLocalNormal);
                         vec3 lpvSample = SampleFloodFill(samplePos); // lmcoord mask won't work here
                         lit += lpvSample;
                     #endif

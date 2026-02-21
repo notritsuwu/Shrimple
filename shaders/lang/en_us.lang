@@ -115,3 +115,12 @@ option.TAA_ENABLED=Enabled
 
 option.TAA_SHARPNESS=Sharpening
 suffix.TAA_SHARPNESS=%
+
+
+screen.MODS=Mods
+
+screen.MOD_PHOTONICS=Photonics
+
+option.PHOTONICS_REFLECT_ENABLED=Reflections
+
+option.PHOTONICS_LIGHT_ENABLED=Lighting

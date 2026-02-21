@@ -51,6 +51,9 @@ const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 4
 #define TAA_SHARPNESS 50 //[0 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100]
 //#define TAA_SHARPEN_HISTORY
 
+#define PHOTONICS_REFLECT_ENABLED
+#define PHOTONICS_LIGHT_ENABLED
+
 //#define DEBUG_WHITEWORLD
 
 
@@ -69,6 +72,11 @@ const bool shadowHardwareFiltering = true;
     #define MATERIAL_PBR_ENABLED
 #else
     #undef MATERIAL_PARALLAX_ENABLED
+#endif
+
+#ifndef PHOTONICS
+    #undef PHOTONICS_REFLECT_ENABLED
+    #undef PHOTONICS_LIGHT_ENABLED
 #endif
 
 #ifdef BLOOM_ENABLED
