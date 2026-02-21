@@ -109,6 +109,10 @@ int sumOf(ivec3 vec) {return vec.x + vec.y + vec.z;}
 float sumOf(vec2 vec) {return vec.x + vec.y;}
 float sumOf(vec3 vec) {return vec.x + vec.y + vec.z;}
 
+float lengthSq(const in vec3 v) {
+    return dot(v, v);
+}
+
 float luminance(const in vec3 color) {
     return dot(color, luma_factor);
 }

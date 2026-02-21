@@ -167,6 +167,8 @@ void main() {
                 vec3(0), vec3(0), vec3(0), false
             );
 
+            RAY_ITERATION_COUNT = 100;
+
             trace_ray(ray, true);
 
             if (ray.result_hit) {

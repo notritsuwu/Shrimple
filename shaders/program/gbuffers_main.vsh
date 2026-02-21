@@ -16,17 +16,21 @@ out VertexData {
     vec3 localNormal;
 
     #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)
-        float chunkFade;
+        flat float chunkFade;
     #endif
 
     #ifdef MATERIAL_PBR_ENABLED
-        flat vec4 localTangent;
+//        flat vec4 localTangent;
+        flat uint localTangent;
+        flat float localTangentW;
     #endif
 
     #ifdef MATERIAL_PARALLAX_ENABLED
         vec3 tangentViewPos;
-        flat vec2 atlasTilePos;
-        flat vec2 atlasTileSize;
+//        flat vec2 atlasTilePos;
+//        flat vec2 atlasTileSize;
+        flat uint atlasTilePos;
+        flat uint atlasTileSize;
     #endif
 
     #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
@@ -47,6 +51,7 @@ uniform vec3 relativeEyePosition;
 
 
 #include "/lib/sampling/lightmap.glsl"
+#include "/lib/octohedral.glsl"
 #include "/lib/tbn.glsl"
 
 #ifdef MATERIAL_PARALLAX_ENABLED
@@ -90,12 +95,18 @@ void main() {
 
     #ifdef MATERIAL_PBR_ENABLED
         vec3 viewTangent = normalize(gl_NormalMatrix * at_tangent.xyz);
-        vOut.localTangent.xyz = mat3(gbufferModelViewInverse) * viewTangent;
-        vOut.localTangent.w = at_tangent.w;
+        vec3 localTangent = mat3(gbufferModelViewInverse) * viewTangent;
+//        vOut.localTangent.xyz = mat3(gbufferModelViewInverse) * viewTangent;
+//        vOut.localTangent.w = at_tangent.w;
+        vOut.localTangent = packUnorm2x16(OctEncode(localTangent));
+        vOut.localTangentW = at_tangent.w;
     #endif
 
     #ifdef MATERIAL_PARALLAX_ENABLED
-        GetAtlasBounds(vOut.texcoord, vOut.atlasTilePos, vOut.atlasTileSize);
+        vec2 atlasTilePos, atlasTileSize;
+        GetAtlasBounds(vOut.texcoord, atlasTilePos, atlasTileSize);
+        vOut.atlasTilePos = packUnorm2x16(atlasTilePos);
+        vOut.atlasTileSize = packUnorm2x16(atlasTileSize);
 
         mat3 matViewTBN = BuildTBN(viewNormal, viewTangent, at_tangent.w);
 

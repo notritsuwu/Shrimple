@@ -16,7 +16,7 @@ layout(location = 0) out vec4 outFinal;
 void main() {
     vec4 color = texture(gtexture, vIn.texcoord);
 
-    color.rgb = RGBToLinear(color.rgb);
+    color.rgb = RGBToLinear(color.rgb) * 0.5;
 
     color *= vIn.color;
 

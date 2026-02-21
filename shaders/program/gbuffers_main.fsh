@@ -11,17 +11,21 @@ in VertexData {
     vec3 localNormal;
 
     #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)
-        float chunkFade;
+        flat float chunkFade;
     #endif
 
     #ifdef MATERIAL_PBR_ENABLED
-        flat vec4 localTangent;
+//        flat vec4 localTangent;
+        flat uint localTangent;
+        flat float localTangentW;
     #endif
 
     #ifdef MATERIAL_PARALLAX_ENABLED
         vec3 tangentViewPos;
-        flat vec2 atlasTilePos;
-        flat vec2 atlasTileSize;
+//        flat vec2 atlasTilePos;
+//        flat vec2 atlasTileSize;
+        flat uint atlasTilePos;
+        flat uint atlasTileSize;
     #endif
 
     #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
@@ -93,6 +97,7 @@ uniform int vxRenderDistance;
 #include "/lib/sampling/lightmap.glsl"
 
 #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+    #include "/lib/octohedral.glsl"
     #include "/lib/fresnel.glsl"
     #include "/lib/material.glsl"
 #endif
@@ -155,9 +160,15 @@ void main() {
         vec3 traceCoordDepth = vec3(1.0);
         vec3 tanViewDir = normalize(vIn.tangentViewPos);
 
+        ParallaxBounds bounds;
         if (!skipParallax && viewDist < MATERIAL_PARALLAX_MAX_DIST) {
-            vec2 localCoord = GetLocalCoord(texcoord, vIn.atlasTilePos, vIn.atlasTileSize);
-            texcoord = GetParallaxCoord(localCoord, mip, tanViewDir, viewDist, texDepth, traceCoordDepth);
+            bounds.atlasTilePos = unpackUnorm2x16(vIn.atlasTilePos);
+            bounds.atlasTileSize = unpackUnorm2x16(vIn.atlasTileSize);
+            bounds.tanViewDir = tanViewDir;
+            bounds.mip = mip;
+
+            vec2 localCoord = GetLocalCoord(texcoord, bounds.atlasTilePos, bounds.atlasTileSize);
+            texcoord = GetParallaxCoord(bounds, localCoord, viewDist, texDepth, traceCoordDepth);
         }
     #endif
 
@@ -186,12 +197,13 @@ void main() {
             float depthDiff = max(texDepth - traceCoordDepth.z, 0.0);
 
             if (depthDiff >= ParallaxSharpThreshold) {
-                tex_normal = GetParallaxSlopeNormal(texcoord, mip, traceCoordDepth.z, tanViewDir);
+                tex_normal = GetParallaxSlopeNormal(bounds, texcoord, traceCoordDepth.z);
             }
         #endif
 
-        vec3 localTangent = normalize(vIn.localTangent.xyz);
-        mat3 matLocalTBN = BuildTBN(localGeoNormal, localTangent, vIn.localTangent.w);
+//        vec3 localTangent = normalize(vIn.localTangent.xyz);
+        vec3 localTangent = OctDecode(unpackUnorm2x16(vIn.localTangent));
+        mat3 matLocalTBN = BuildTBN(localGeoNormal, localTangent, vIn.localTangentW);
         vec3 localTexNormal = normalize(matLocalTBN * tex_normal);
 
         vec4 specularData = textureLod(specular, texcoord, mip);
@@ -346,9 +358,12 @@ void main() {
                 RayJob ray = RayJob(rtOrigin, lightDir,
                     vec3(0), vec3(0), vec3(0), false);
 
+                RAY_ITERATION_COUNT = 32;
+//                breakOnEmpty=true;
+
                 trace_ray(ray, true);
 
-                if (ray.result_hit && distance(rtOrigin, ray.result_position) < handDist - 0.001) {
+                if (ray.result_hit && lengthSq(rtOrigin - ray.result_position) < _pow2(handDist) - 0.004) {
                     NoLm = 0.0;
                 }
             #endif

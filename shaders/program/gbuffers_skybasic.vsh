@@ -4,7 +4,6 @@
 varying vec4 starData;
 out vec3 localPos;
 
-//uniform int renderStage;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 gbufferModelViewInverse;
 

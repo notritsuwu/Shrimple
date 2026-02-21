@@ -24,16 +24,12 @@ void main() {
     if (renderStage == MC_RENDER_STAGE_STARS) {
         color = starData;
         color.rgb = RGBToLinear(color.rgb);
-//        color.rgb *= Sky_MoonBrightnessF;
     }
     else {
         vec3 localViewDir = normalize(localPos);
-        vec3 skyColorL = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), localViewDir.y);
-
-        color = vec4(skyColorL, 1.0);
+        color.rgb = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), localViewDir.y);
+        color.a = 1.0;
     }
-
-//    color.rgb = RGBToLinear(color.rgb);
 
     outFinal = color;
 }
