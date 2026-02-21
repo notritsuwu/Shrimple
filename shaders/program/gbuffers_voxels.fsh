@@ -2,19 +2,12 @@
 #include "/lib/common.glsl"
 
 in VertexData {
-    vec4 color;
+//    vec4 color;
     vec2 lmcoord;
-    vec2 texcoord;
     vec3 localPos;
+    vec3 localNormal;
 } vIn;
 
-
-uniform sampler2D gtexture;
-
-#ifdef MATERIAL_PBR_ENABLED
-    uniform sampler2D normals;
-    uniform sampler2D specular;
-#endif
 
 #if LIGHTING_MODE == LIGHTING_MODE_VANILLA
     uniform sampler2D lightmap;
@@ -37,25 +30,28 @@ uniform float fogDensity;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
+uniform vec4 entityColor;
 uniform float alphaTestRef;
 uniform vec3 sunPosition;
 uniform vec3 shadowLightPosition;
+uniform mat4 gbufferModelView;
+uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
 uniform int frameCounter;
 uniform int isEyeInWater;
-
-uniform int textureFilteringMode;
-uniform int vxRenderDistance;
+uniform ivec2 atlasSize;
+uniform vec2 viewSize;
 
 #include "/lib/oklab.glsl"
 #include "/lib/hsv.glsl"
 #include "/lib/fog.glsl"
 #include "/lib/sampling/lightmap.glsl"
 
-#ifdef MATERIAL_PBR_ENABLED
+#if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+    #include "/lib/fresnel.glsl"
     #include "/lib/material.glsl"
 #endif
 
@@ -72,36 +68,58 @@ uniform int vxRenderDistance;
     #include "/lib/shadows.glsl"
 #endif
 
-/* RENDERTARGETS: 0 */
-layout(location = 0) out vec4 outFinal;
+#ifdef LIGHTING_REFLECT_ENABLED
+    #include "/lib/octohedral.glsl"
+#endif
+
+#include "/photonics/photonics.glsl"
+
+
+#ifdef LIGHTING_REFLECT_ENABLED
+    /* RENDERTARGETS: 0,1,2 */
+    layout(location = 0) out vec4 outFinal;
+    layout(location = 1) out uint outReflectNormal;
+    layout(location = 2) out uvec2 outReflectSpecular;
+#else
+    /* RENDERTARGETS: 0 */
+    layout(location = 0) out vec4 outFinal;
+#endif
 
 
 void main() {
-    vec2 texcoord = vIn.texcoord;
-    float mip = textureQueryLod(gtexture, texcoord).y;
-    float viewDist = length(vIn.localPos);
+    vec3 rayOrigin = vIn.localPos + (cameraPosition - world_offset);
+    vec3 localNormal = normalize(vIn.localNormal);
 
-    vec4 color = textureLod(gtexture, texcoord, mip);
+    // avoid view bobbing
+    vec3 viewPos = mul3(gbufferModelView, vIn.localPos);
+    vec3 localViewDir = mat3(gbufferModelViewInverse) * normalize(viewPos);
 
-    if (color.a < alphaTestRef) discard;
+    RayJob ray = RayJob(
+        rayOrigin - 0.001 * localNormal,
+        localViewDir,
+        vec3(0), vec3(0), vec3(0), false
+    );
 
-    #if defined(RENDER_TERRAIN) && LIGHTING_MODE == LIGHTING_MODE_ENHANCED
-        color.rgb *= vIn.color.rgb;
-    #else
-        color *= vIn.color;
-    #endif
+    ray_constraint = ivec3(ray.origin);
+    trace_ray(ray);
 
-    #ifdef MATERIAL_PBR_ENABLED
-        vec4 normalData = textureLod(normals, texcoord, mip);
-    //    vec3 tex_normal = mat_normal(normalData.xyz);
-        float tex_occlusion = mat_occlusion(normalData.w);
+    if (!ray.result_hit) discard;
+    if (ray.result_normal != vec3(0.0))
+        localNormal = ray.result_normal;
 
-        vec4 specularData = textureLod(specular, texcoord, mip);
-    #else
-        const float tex_occlusion = 1.0;
-    #endif
+    vec3 hitLocalPos = ray.result_position - (cameraPosition - world_offset);
+    vec3 hitViewPos = mul3(gbufferModelView, hitLocalPos);
+
+    float hitViewDepth = -hitViewPos.z;
+    gl_FragDepth = 0.5 * (-gbufferProjection[2].z*hitViewDepth + gbufferProjection[3].z) / hitViewDepth + 0.5;
+
+    vec4 color = vec4(ray.result_color, 1.0);
+
+
+    float viewDist = length(hitLocalPos);
 
     vec3 albedo = RGBToLinear(color.rgb);
+    vec4 specularData = vec4(0.0, 0.04, 0.0, 0.0);
 
     #ifdef DEBUG_WHITEWORLD
         albedo = vec3(0.86);
@@ -111,8 +129,10 @@ void main() {
 
     float shadow = 1.0;
     #ifdef SHADOWS_ENABLED
-        vec3 shadowPos = mul3(shadowModelView, vIn.localPos);
-        shadowPos.z += 0.016 * viewDist;
+        vec3 shadowPos = hitLocalPos;
+        shadowPos += 0.08 * localNormal;
+        shadowPos = mul3(shadowModelView, shadowPos);
+        shadowPos.z += 0.032 * viewDist;
         shadowPos = (shadowProjection * vec4(shadowPos, 1.0)).xyz;
 
         distort(shadowPos.xy);
@@ -124,10 +144,13 @@ void main() {
             float shadowDepth = textureLod(shadowtex1, shadowPos.xy, 0).r;
             shadow = step(shadowPos.z, shadowDepth);
         #endif
+
+        float shadow_NoL = dot(localNormal, localSkyLightDir);
+        shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
 
     #ifdef LIGHTING_COLORED
-        vec3 voxelPos = GetVoxelPosition(vIn.localPos);
+        vec3 voxelPos = GetVoxelPosition(hitLocalPos);
         float lpvFade = GetVoxelFade(voxelPos);
     #endif
 
@@ -139,7 +162,7 @@ void main() {
         vec3 blockLight = lmcoord.x * blockLightColor;
 
         #ifdef LIGHTING_COLORED
-            vec3 samplePos = GetFloodFillSamplePos(voxelPos, vec3(0.0));
+            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
             vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
             blockLight = mix(blockLight, lpvSample, lpvFade);
         #endif
@@ -147,18 +170,19 @@ void main() {
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
         vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
 
-        vec3 skyLight = lmcoord.y * (shadow*0.7 + 0.3) * skyLightColor;
+        float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
+        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
 
         #ifdef RENDER_TERRAIN
             color.rgb *= _pow2(vIn.color.a);
         #endif
-
-        // TODO: move to ambient lighting?
-        color.rgb *= tex_occlusion;
     #else
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
+
+        float sky_NoLM = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
+        lmcoord.y *= saturate(sky_NoLM);
 
         #ifdef LIGHTING_COLORED
             lmcoord.x *= 1.0 - lpvFade;
@@ -169,38 +193,43 @@ void main() {
         lit = RGBToLinear(lit);
 
         #ifdef LIGHTING_COLORED
-            vec3 samplePos = GetFloodFillSamplePos(voxelPos, vec3(0.0));
+            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
             vec3 lpvSample = SampleFloodFill(samplePos, pow(vIn.lmcoord.x, 2.2));
             lit += lpvFade * lpvSample;
         #endif
 
         color.rgb = albedo * lit;
-        color.rgb *= tex_occlusion;
     #endif
 
-    #ifdef MATERIAL_PBR_ENABLED
-        float emission = mat_emission(specularData);
-        color.rgb += albedo * emission;
+    #ifdef LIGHTING_REFLECT_ENABLED
+        float smoothness = 1.0 - mat_roughness_lab(specularData.r);
+        float f0 = mat_f0_lab(specularData.g);
+
+        float NoV = dot(localNormal, -localViewDir);
+        color.rgb *= 1.0 - F_schlick(NoV, f0, 1.0) * _pow2(smoothness);
     #endif
+
 
     float borderFogF = GetBorderFogStrength(viewDist);
     float envFogF = smoothstep(fogStart, fogEnd, viewDist);
     float fogF = max(borderFogF, envFogF);
 
-    #if defined(RENDER_TERRAIN) && defined(IRIS_FEATURE_FADE_VARIABLE)
-        #ifdef RENDER_TRANSLUCENT
-            color.a *= vIn.chunkFade;
-        #else
-            fogF = max(fogF, 1.0 - vIn.chunkFade);
-        #endif
-    #endif
-
     vec3 fogColorL = RGBToLinear(fogColor);
     vec3 skyColorL = RGBToLinear(skyColor);
-    vec3 localViewDir = normalize(vIn.localPos);
     vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
 
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
+
     outFinal = color;
+
+    #ifdef LIGHTING_REFLECT_ENABLED
+        vec3 viewNormal = mat3(gbufferModelView) * localNormal;
+
+        outReflectNormal = packUnorm2x16(OctEncode(viewNormal));
+
+        outReflectSpecular = uvec2(
+            packUnorm4x8(vec4(LinearToRGB(albedo.rgb), vIn.lmcoord.y)),
+            packUnorm4x8(specularData));
+    #endif
 }

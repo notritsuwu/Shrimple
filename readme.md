@@ -1,6 +1,15 @@
 # Shrimple [shader]
 
 A Minecraft Java shader that attempts to maintain a minimal "vanilla" aesthetic, while adding some optional features:
+- TAA +CAS. Temporal AntiAliasing reduces jagged edges, and improves subpixel details. Filtered using a modified version of AMD's Contrast-Aware Sharpening.
+- Colored Lighting. Uses custom floodfill implementation to replace nearby lighting with a similar RGB variant.
+- PBR Materials. Both "OldPbr" and "LabPbr" packs are supported, with a very minimal "PBR" implementation.
+- Reflections. Screen-space by default; use Photonics for world-space reflections.
+- Parallax/"POM". Also support "smooth" and "sharp" methods.
+
+
+
+A Minecraft Java shader that attempts to maintain a minimal "vanilla" aesthetic, while adding some optional features:
  - Waving Plants.
  - Rain puddles & ripples.
  - Volumetric fog lighting.
@@ -12,6 +21,11 @@ A Minecraft Java shader that attempts to maintain a minimal "vanilla" aesthetic,
 
 
 ## Mod Support
+
+### Photonics
+The [Photonics](https://modrinth.com/mod/photonics) mod can be used to replace screen-space reflection with fully world-space reflections. RT lighting is not currently supported.
+
+### Other
  - Applied Energistics 2
  - [Big Globe](https://modrinth.com/mod/big-globe)
  - [Colorwheel](https://modrinth.com/mod/colorwheel)
@@ -29,8 +43,8 @@ A Minecraft Java shader that attempts to maintain a minimal "vanilla" aesthetic,
 
 
 ## FAQ
-- **Q:** Why isn't block-lighting being ray traced?  
-**A:** RT is off by default. Either change Block Light > Mode to "Traced", or apply the "RTX" profile.
+- **Q:** What happened to the "RTX" profile /ray-traced lighting?  
+**A:** I removed it, never should have added to Shrimple
 
 - **Q:** How do I make colored/dynamic/traced shadows work further from player/camera?  
 **A:** You can increase the Block Lighting > Advanced > Horizontal/Vertical Bin Counts. Increasing the Bin Size option will also help, but it will reduce the maximum "density" of light sources per area.

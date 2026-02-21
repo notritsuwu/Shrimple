@@ -309,13 +309,7 @@ void main() {
 //    color.rgb = vec3(lmcoord, 0);
 
 
-    #ifdef VOXY
-        #define _far (vxRenderDistance * 16.0)
-    #else
-        #define _far far
-    #endif
-
-    float borderFogF = smoothstep(0.94 * _far, _far, viewDist);
+    float borderFogF = GetBorderFogStrength(viewDist);
     float envFogF = smoothstep(fogStart, fogEnd, viewDist);
     float fogF = max(borderFogF, envFogF);
 

@@ -24,6 +24,7 @@ uniform usampler2D TEX_REFLECT_SPECULAR;
 #endif
 
 uniform float near;
+uniform float far;
 uniform float farPlane;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
@@ -86,6 +87,15 @@ vec3 projectScreenTrace(const in vec3 viewPos, const in vec3 screenPos, const in
     return projectToScreenBounds(screenPos, screenDir);
 }
 
+#ifdef PHOTONICS
+    #PH_USE_CUSTOM_ALPHA
+    #PH_ALPHA_FUNC(color) apply_tint_impl(color)
+
+    vec3 apply_tint_impl(const in vec4 color) {
+        return color.rgb * (1.0 - color.a);
+    }
+#endif
+
 
 /* RENDERTARGETS: 0 */
 layout(location = 0) out vec3 outFinal;
@@ -102,6 +112,8 @@ void main() {
         #ifdef TAA_ENABLED
             ndcPos.xy -= taa_offset * 2.0;
         #endif
+
+        // TODO: fix hand depth
 
         vec3 viewPos = project(gbufferProjectionInverse, ndcPos);
         vec3 viewDir = normalize(viewPos);
@@ -148,7 +160,7 @@ void main() {
                 vec3(0), vec3(0), vec3(0), false
             );
 
-            trace_ray(ray);
+            trace_ray(ray, true);
 
             if (ray.result_hit) {
                 hit = true;
@@ -200,6 +212,8 @@ void main() {
 
                     reflectColor = albedo * lit;
                 #endif
+
+                reflectColor *= result_tint_color;
             }
         #else
             vec3 screenEnd = projectScreenTrace(viewPos, screenPos, reflectViewDir);
