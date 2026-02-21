@@ -337,30 +337,24 @@ void main() {
         }
 
         vec3 lightDir = normalize(vIn.localPos - handLightPos);
+        float NoLm = max(dot(localTexNormal, -lightDir), 0.0);
 
-        #ifdef PHOTONICS_LIGHT_ENABLED
-            // TODO: block light if trace hit
-            // handLightPos
-            vec3 rtOrigin = handLightPos + (cameraPosition - world_offset);
+        if (heldBlockLightValue > 0 || heldBlockLightValue2 > 0) {
+            #ifdef PHOTONICS_LIGHT_ENABLED
+                vec3 rtOrigin = handLightPos + (cameraPosition - world_offset);
 
-            if (heldBlockLightValue > 0) {
                 RayJob ray = RayJob(rtOrigin, lightDir,
                     vec3(0), vec3(0), vec3(0), false);
 
                 trace_ray(ray, true);
 
                 if (ray.result_hit && distance(rtOrigin, ray.result_position) < handDist - 0.001) {
-                    handLight1 = 0.0;
+                    NoLm = 0.0;
                 }
-            }
+            #endif
 
-            if (heldBlockLightValue2 > 0) {
-                // TODO
-            }
-        #endif
-
-        float NoLm = max(dot(localTexNormal, -lightDir), 0.0);
-        color.rgb += albedo * NoLm * (_pow2(handLight1) * handLightColor1 + _pow2(handLight2) * handLightColor2);
+            color.rgb += albedo * NoLm * (_pow2(handLight1) * handLightColor1 + _pow2(handLight2) * handLightColor2);
+        }
     #endif
 
     #ifdef LIGHTING_REFLECT_ENABLED
