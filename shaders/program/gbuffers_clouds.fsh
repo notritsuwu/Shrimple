@@ -9,14 +9,15 @@ in VertexData {
 
 uniform sampler2D gtexture;
 
+uniform float far;
 uniform int renderStage;
 uniform int isEyeInWater;
 uniform vec3 skyColor;
-uniform float far;
 uniform vec3 fogColor;
 uniform float fogDensity;
 uniform float fogStart;
 uniform float fogEnd;
+uniform int vxRenderDistance;
 
 #include "/lib/oklab.glsl"
 #include "/lib/fog.glsl"

@@ -5,11 +5,12 @@ in vec4 starData;
 in vec3 localPos;
 
 
-uniform int renderStage;
-uniform int isEyeInWater;
+uniform float far;
 uniform vec3 skyColor;
 uniform vec3 fogColor;
-uniform float far;
+uniform int renderStage;
+uniform int isEyeInWater;
+uniform int vxRenderDistance;
 
 #include "/lib/oklab.glsl"
 #include "/lib/fog.glsl"

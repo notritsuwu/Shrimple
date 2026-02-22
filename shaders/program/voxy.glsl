@@ -1,6 +1,8 @@
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
+uniform int isEyeInWater;
+
 #include "/lib/blocks.glsl"
 #include "/lib/sampling/lightmap.glsl"
 #include "/lib/oklab.glsl"
