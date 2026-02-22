@@ -1,8 +1,9 @@
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
-const bool colortex0MipmapEnabled = true;
-
+#ifndef PHOTONICS_REFLECT_ENABLED
+    const bool colortex0MipmapEnabled = true;
+#endif
 
 #define MATERIAL_REFLECT_STEPS 32
 #define MATERIAL_REFLECT_REFINE_STEPS 8
@@ -156,8 +157,7 @@ void main() {
 
             bool hit = false;
             #ifdef PHOTONICS_REFLECT_ENABLED
-
-            vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
+                vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
                 vec3 rtPos = localPos + (cameraPosition - world_offset);
 
                 vec3 localNormal = mat3(gbufferModelViewInverse) * viewNormal;

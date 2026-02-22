@@ -19,15 +19,7 @@ uniform int renderStage;
 #include "/lib/sampling/lightmap.glsl"
 
 
-#ifdef LIGHTING_REFLECT_ENABLED
-    /* RENDERTARGETS: 0,1,2 */
-    layout(location = 0) out vec4 outFinal;
-    layout(location = 1) out uint outReflectNormal;
-    layout(location = 2) out uvec2 outReflectSpecular;
-#else
-    /* RENDERTARGETS: 0 */
-    layout(location = 0) out vec4 outFinal;
-#endif
+#include "_output.glsl"
 
 void main() {
     vec4 color = unpackUnorm4x8(vIn.color);

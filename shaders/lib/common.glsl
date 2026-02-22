@@ -2,6 +2,7 @@
 const int colortex0Format  = RGBA16F;
 const int colortex1Format  = R32UI;
 const int colortex2Format  = RG32UI;
+const int colortex3Format  = R32UI;
 const int colortex5Format  = RGBA16F;
 */
 

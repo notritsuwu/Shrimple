@@ -71,16 +71,7 @@ uniform vec2 viewSize;
 #include "/photonics/photonics.glsl"
 
 
-#ifdef LIGHTING_REFLECT_ENABLED
-    /* RENDERTARGETS: 0,1,2 */
-    layout(location = 0) out vec4 outFinal;
-    layout(location = 1) out uint outReflectNormal;
-    layout(location = 2) out uvec2 outReflectSpecular;
-#else
-    /* RENDERTARGETS: 0 */
-    layout(location = 0) out vec4 outFinal;
-#endif
-
+#include "_output.glsl"
 
 void main() {
     vec3 rayOrigin = vIn.localPos + (cameraPosition - world_offset);

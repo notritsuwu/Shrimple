@@ -127,16 +127,7 @@ uniform int vxRenderDistance;
 #endif
 
 
-#ifdef LIGHTING_REFLECT_ENABLED
-    /* RENDERTARGETS: 0,1,2 */
-    layout(location = 0) out vec4 outFinal;
-    layout(location = 1) out uint outReflectNormal;
-    layout(location = 2) out uvec2 outReflectSpecular;
-#else
-    /* RENDERTARGETS: 0 */
-    layout(location = 0) out vec4 outFinal;
-#endif
-
+#include "_output.glsl"
 
 void main() {
     vec2 texcoord = vIn.texcoord;
@@ -249,27 +240,27 @@ void main() {
         shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
 
-    #ifdef LIGHTING_COLORED
-        vec3 voxelPos = GetVoxelPosition(vIn.localPos);
-        float lpvFade = GetVoxelFade(voxelPos);
-    #endif
-
     vec2 lmcoord = vIn.lmcoord;
 
-    #ifdef LIGHTING_HAND
-        vec3 handLightPos = GetHandLightPosition();
-        float handDist = distance(vIn.localPos, handLightPos);
-    #endif
-
-    #if defined(LIGHTING_HAND) && !defined(LIGHTING_COLORED)
-        float handLightLevel = max(heldBlockLightValue, heldBlockLightValue2);
-        float handLight = max(handLightLevel - handDist, 0.0) / 15.0;
-
-        #ifdef PHOTONICS_LIGHT_ENABLED
-            // TODO: block light if trace hit
+    #ifdef PHOTONICS_LIGHT_ENABLED
+        lmcoord.x = 0.0;
+    #else
+        #ifdef LIGHTING_COLORED
+            vec3 voxelPos = GetVoxelPosition(vIn.localPos);
+            float lpvFade = GetVoxelFade(voxelPos);
         #endif
 
-        lmcoord.x = max(lmcoord.x, handLight);
+        #ifdef LIGHTING_HAND
+            vec3 handLightPos = GetHandLightPosition();
+            float handDist = distance(vIn.localPos, handLightPos);
+        #endif
+
+        #if defined(LIGHTING_HAND) && !defined(LIGHTING_COLORED)
+            float handLightLevel = max(heldBlockLightValue, heldBlockLightValue2);
+            float handLight = max(handLightLevel - handDist, 0.0) / 15.0;
+
+            lmcoord.x = max(lmcoord.x, handLight);
+        #endif
     #endif
 
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
@@ -278,7 +269,7 @@ void main() {
         const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
         vec3 blockLight = lmcoord.x * blockLightColor;
 
-        #ifdef LIGHTING_COLORED
+        #if defined(LIGHTING_COLORED) && !defined(PHOTONICS_LIGHT_ENABLED)
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, localTexNormal);
             vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
             blockLight = mix(blockLight, lpvSample, lpvFade);
@@ -312,7 +303,7 @@ void main() {
         vec3 lit = textureLod(lightmap, lmcoord, 0).rgb;
         lit = RGBToLinear(lit);
 
-        #ifdef LIGHTING_COLORED
+        #if defined(LIGHTING_COLORED) && !defined(PHOTONICS_LIGHT_ENABLED)
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, localTexNormal);
             vec3 lpvSample = SampleFloodFill(samplePos, pow(vIn.lmcoord.x, 2.2));
             lit += lpvFade * lpvSample;
@@ -322,7 +313,7 @@ void main() {
         color.rgb *= tex_occlusion;
     #endif
 
-    #if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED)
+    #if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED) && !defined(PHOTONICS_LIGHT_ENABLED)
         float handLight1 = max(heldBlockLightValue  - handDist, 0.0) / 15.0;
         float handLight2 = max(heldBlockLightValue2 - handDist, 0.0) / 15.0;
 
@@ -344,21 +335,21 @@ void main() {
         float NoLm = max(dot(localTexNormal, -lightDir), 0.0);
 
         if (heldBlockLightValue > 0 || heldBlockLightValue2 > 0) {
-            #ifdef PHOTONICS_LIGHT_ENABLED
-                vec3 rtOrigin = handLightPos + (cameraPosition - world_offset);
-
-                RayJob ray = RayJob(rtOrigin, lightDir,
-                    vec3(0), vec3(0), vec3(0), false);
-
-                RAY_ITERATION_COUNT = PHOTONICS_LIGHT_STEPS;
-//                breakOnEmpty=true;
-
-                trace_ray(ray, true);
-
-                if (ray.result_hit && lengthSq(rtOrigin - ray.result_position) < _pow2(handDist) - 0.004) {
-                    NoLm = 0.0;
-                }
-            #endif
+//            #ifdef PHOTONICS_LIGHT_ENABLED
+//                vec3 rtOrigin = handLightPos + (cameraPosition - world_offset);
+//
+//                RayJob ray = RayJob(rtOrigin, lightDir,
+//                    vec3(0), vec3(0), vec3(0), false);
+//
+//                RAY_ITERATION_COUNT = PHOTONICS_LIGHT_STEPS;
+////                breakOnEmpty=true;
+//
+//                trace_ray(ray, true);
+//
+//                if (ray.result_hit && lengthSq(rtOrigin - ray.result_position) < _pow2(handDist) - 0.004) {
+//                    NoLm = 0.0;
+//                }
+//            #endif
 
             color.rgb += albedo * NoLm * (_pow2(handLight1) * handLightColor1 + _pow2(handLight2) * handLightColor2);
         }
@@ -410,10 +401,14 @@ void main() {
 
     outFinal = color;
 
-    #ifdef LIGHTING_REFLECT_ENABLED
-        vec3 viewNormal = mat3(gbufferModelView) * localTexNormal;
+    #ifdef PHOTONICS_LIGHT_ENABLED
+        outGeoNormal = packUnorm2x16(OctEncode(localGeoNormal));
+    #endif
 
-        outReflectNormal = packUnorm2x16(OctEncode(viewNormal));
+    #ifdef LIGHTING_REFLECT_ENABLED
+        vec3 viewTexNormal = mat3(gbufferModelView) * localTexNormal;
+
+        outReflectNormal = packUnorm2x16(OctEncode(viewTexNormal));
 
         outReflectSpecular = uvec2(
             packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord.y)),

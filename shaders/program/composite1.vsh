@@ -3,8 +3,6 @@
 
 out vec2 texcoord;
 
-uniform vec2 viewSize;
-
 
 void main() {
     gl_Position = ftransform();
