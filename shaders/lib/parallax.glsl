@@ -146,16 +146,9 @@ vec2 GetParallaxCoord(const in ParallaxBounds bounds, const in vec2 localCoord, 
         vec2 viewSign = sign(-bounds.tanViewDir.xy);
 
         bool dir = abs(tex_offset.x  * atlasAspect) < abs(tex_offset.y);
-        vec2 tex_x, tex_y;
 
-        if (dir) {
-            tex_x = vec2(viewSign.x, 0.0);
-            tex_y = vec2(0.0, stepSign.y);
-        }
-        else {
-            tex_x = vec2(stepSign.x, 0.0);
-            tex_y = vec2(0.0, viewSign.y);
-        }
+        vec2 tex_x = vec2(dir ? viewSign.x : stepSign.x, 0.0);
+        vec2 tex_y = vec2(0.0, dir ? stepSign.y : viewSign.y);
 
         vec2 tX = GetLocalCoord(atlasCoord + tex_x * atlasPixelSize, bounds.atlasTilePos, bounds.atlasTileSize);
         tX = GetAtlasCoord(tX, bounds.atlasTilePos, bounds.atlasTileSize);
@@ -165,35 +158,20 @@ vec2 GetParallaxCoord(const in ParallaxBounds bounds, const in vec2 localCoord, 
 
         float height_x = textureLod(normals, tX, bounds.mip).a;
         float height_y = textureLod(normals, tY, bounds.mip).a;
+
+        bool preferY = abs(bounds.tanViewDir.y) > abs(bounds.tanViewDir.x);
+
+        float heightA = dir ? height_y : height_x;
+        float heightB = dir ? height_x : height_y;
+
+        float viewA = dir ? viewSign.y : viewSign.x;
+        float stepA = dir ? stepSign.y : stepSign.x;
+
+        bool chooseY = (traceDepth > heightA) && (-viewA != stepA)
+            ? dir : (traceDepth > heightB ? !dir : preferY);
+
         vec3 signMask = vec3(0.0);
-
-        if (dir) {
-            if (!(traceDepth > height_y && -viewSign.y != stepSign.y)) {
-                if (traceDepth > height_x)
-                    signMask.x = 1.0;
-                else if (abs(bounds.tanViewDir.y) > abs(bounds.tanViewDir.x))
-                    signMask.y = 1.0;
-                else
-                    signMask.x = 1.0;
-            }
-            else {
-                signMask.y = 1.0;
-            }
-        }
-        else {
-            if (!(traceDepth > height_x && -viewSign.x != stepSign.x)) {
-                if (traceDepth > height_y)
-                    signMask.y = 1.0;
-                else if (abs(bounds.tanViewDir.y) > abs(bounds.tanViewDir.x))
-                    signMask.y = 1.0;
-                else
-                    signMask.x = 1.0;
-            }
-            else {
-                signMask.x = 1.0;
-            }
-        }
-
+        signMask[chooseY ? 1 : 0] = 1.0;
         return signMask * vec3(viewSign, 0.0);
     }
 #endif

@@ -20,15 +20,12 @@ out VertexData {
     #endif
 
     #ifdef MATERIAL_PBR_ENABLED
-//        flat vec4 localTangent;
         flat uint localTangent;
         flat float localTangentW;
     #endif
 
     #ifdef MATERIAL_PARALLAX_ENABLED
         vec3 tangentViewPos;
-//        flat vec2 atlasTilePos;
-//        flat vec2 atlasTileSize;
         flat uint atlasTilePos;
         flat uint atlasTileSize;
     #endif
@@ -44,10 +41,7 @@ uniform int heldBlockLightValue2;
 uniform mat4 gbufferModelViewInverse;
 uniform bool firstPersonCamera;
 uniform vec3 relativeEyePosition;
-
-#ifdef TAA_ENABLED
-    uniform vec2 taa_offset = vec2(0.0);
-#endif
+uniform vec2 taa_offset = vec2(0.0);
 
 
 #include "/lib/sampling/lightmap.glsl"
@@ -65,10 +59,11 @@ uniform vec3 relativeEyePosition;
 
 void main() {
     vOut.texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
-    vOut.lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
-    vOut.color = gl_Color;
 
+    vOut.lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
     vOut.lmcoord = LightMapNorm(vOut.lmcoord);
+
+    vOut.color = gl_Color;
 
     vec3 viewNormal = normalize(gl_NormalMatrix * gl_Normal);
     vOut.localNormal = mat3(gbufferModelViewInverse) * viewNormal;
@@ -96,8 +91,6 @@ void main() {
     #ifdef MATERIAL_PBR_ENABLED
         vec3 viewTangent = normalize(gl_NormalMatrix * at_tangent.xyz);
         vec3 localTangent = mat3(gbufferModelViewInverse) * viewTangent;
-//        vOut.localTangent.xyz = mat3(gbufferModelViewInverse) * viewTangent;
-//        vOut.localTangent.w = at_tangent.w;
         vOut.localTangent = packUnorm2x16(OctEncode(localTangent));
         vOut.localTangentW = at_tangent.w;
     #endif

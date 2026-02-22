@@ -3,7 +3,7 @@
 
 
 in VertexData {
-    vec4 color;
+    flat uint color;
     vec2 texcoord;
 } vIn;
 
@@ -16,9 +16,10 @@ layout(location = 0) out vec4 outFinal;
 void main() {
     vec4 color = texture(gtexture, vIn.texcoord);
 
-    color.rgb = RGBToLinear(color.rgb) * 0.5;
+    vec4 tint = unpackUnorm4x8(vIn.color);
+    color *= tint;
 
-    color *= vIn.color;
+    color.rgb = RGBToLinear(color.rgb) * 0.5;
 
     outFinal = color;
 }

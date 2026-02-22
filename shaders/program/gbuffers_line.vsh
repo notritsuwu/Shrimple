@@ -5,7 +5,7 @@ in vec3 vaPosition;
 in vec3 vaNormal;
 
 out VertexData {
-    flat vec4 color;
+    flat uint color;
     vec2 lmcoord;
     vec2 texcoord;
     vec3 localPos;
@@ -31,10 +31,12 @@ void main() {
     #endif
 
     vOut.texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
-    vOut.lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
-    vOut.color = gl_Color;
 
+    vOut.lmcoord  = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
     vOut.lmcoord = LightMapNorm(vOut.lmcoord);
+
+    vOut.color = packUnorm4x8(gl_Color);
+
     vec2 pixelSize = 1.0 / viewSize;
 
     vec4 linePosStart = vec4(mul3(modelViewMatrix, vaPosition), 1.0);

@@ -118,26 +118,9 @@ void main() {
     vec3 reflectColor = vec3(0.0);
 
     if (depth < 1.0) {
-        vec3 screenPos = vec3(texcoord, depth);
-        vec3 ndcPos = screenPos * 2.0 - 1.0;
-
-        #ifdef TAA_ENABLED
-            ndcPos.xy -= taa_offset * 2.0;
-        #endif
-
-        // TODO: fix hand depth
-
-        vec3 viewPos = project(gbufferProjectionInverse, ndcPos);
-        vec3 viewDir = normalize(viewPos);
-
-        uint reflectNormalData = texelFetch(TEX_REFLECT_NORMAL, uv, 0).r;
-        vec3 viewNormal = OctDecode(unpackUnorm2x16(reflectNormalData));
-
         uvec2 reflectData = texelFetch(TEX_REFLECT_SPECULAR, uv, 0).rg;
         vec4 reflectDataR = unpackUnorm4x8(reflectData.r);
         vec4 specularData = unpackUnorm4x8(reflectData.g);
-
-        float lmcoord_y = reflectDataR.w;
 
         #ifdef MATERIAL_PBR_ENABLED
             float roughness = mat_roughness(specularData.r);
@@ -151,173 +134,193 @@ void main() {
 
         float smoothness = 1.0 - roughness;
 
-        vec3 reflectViewDir = normalize(reflect(viewDir, viewNormal));
+        if (smoothness > (1.5/255.0)) {
+            vec3 screenPos = vec3(texcoord, depth);
+            vec3 ndcPos = screenPos * 2.0 - 1.0;
 
-        bool hit = false;
-        #ifdef PHOTONICS_REFLECT_ENABLED
+            #ifdef TAA_ENABLED
+                ndcPos.xy -= taa_offset * 2.0;
+            #endif
+
+            // TODO: fix hand depth
+
+            vec3 viewPos = project(gbufferProjectionInverse, ndcPos);
+            vec3 viewDir = normalize(viewPos);
+
+            uint reflectNormalData = texelFetch(TEX_REFLECT_NORMAL, uv, 0).r;
+            vec3 viewNormal = OctDecode(unpackUnorm2x16(reflectNormalData));
+
+            float lmcoord_y = reflectDataR.w;
+
+            vec3 reflectViewDir = normalize(reflect(viewDir, viewNormal));
+
+            bool hit = false;
+            #ifdef PHOTONICS_REFLECT_ENABLED
+
             vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
-            vec3 rtPos = localPos + (cameraPosition - world_offset);
+                vec3 rtPos = localPos + (cameraPosition - world_offset);
 
-            vec3 localNormal = mat3(gbufferModelViewInverse) * viewNormal;
-            vec3 localReflectDir = mat3(gbufferModelViewInverse) * reflectViewDir;
+                vec3 localNormal = mat3(gbufferModelViewInverse) * viewNormal;
+                vec3 localReflectDir = mat3(gbufferModelViewInverse) * reflectViewDir;
 
-            RayJob ray = RayJob(
-                rtPos + 0.004 * localNormal,
-                localReflectDir,
-                vec3(0), vec3(0), vec3(0), false
-            );
+                RayJob ray = RayJob(
+                    rtPos + 0.004 * localNormal,
+                    localReflectDir,
+                    vec3(0), vec3(0), vec3(0), false
+                );
 
-            RAY_ITERATION_COUNT = 100;
+                RAY_ITERATION_COUNT = PHOTONICS_REFLECT_STEPS;
 
-            trace_ray(ray, true);
+                trace_ray(ray, true);
 
-            if (ray.result_hit) {
-                hit = true;
-                vec3 albedo = RGBToLinear(ray.result_color);
-
-                vec3 hitLocalPos = ray.result_position - (cameraPosition - world_offset);
-                vec3 hitLocalNormal = ray.result_normal;
-
-                float hit_sky = get_result_sky_light(hitLocalNormal) / 15.0;
-                vec2 lmcoord = vec2(0.0, hit_sky);
-
-                vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
-
-                float shadow = 1.0;
-                #ifdef SHADOWS_ENABLED
-                    float hitViewDist = length(hitLocalPos);
-
-                    vec3 shadowPos = hitLocalPos;
-                    shadowPos += 0.08 * hitLocalNormal;
-                    shadowPos = mul3(shadowModelView, shadowPos);
-                    shadowPos.z += 0.032 * hitViewDist;
-                    shadowPos = (shadowProjection * vec4(shadowPos, 1.0)).xyz;
-
-                    distort(shadowPos.xy);
-                    shadowPos = shadowPos * 0.5 + 0.5;
-
-                    #ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
-                        shadow = texture(shadowtex1HW, shadowPos).r;
-                    #else
-                        float shadowDepth = textureLod(shadowtex1, shadowPos.xy, 0).r;
-                        shadow = step(shadowPos.z, shadowDepth);
-                    #endif
-
-                    float shadow_NoL = dot(hitLocalNormal, localSkyLightDir);
-                    shadow *= pow(saturate(shadow_NoL), 0.2);
-                #endif
-
-                #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
-                    lmcoord = _pow3(lmcoord);
-
-                    // block lightmap coord not supported
-                    vec3 blockLight = vec3(0.0);
-
-                    #ifdef LIGHTING_COLORED
-                        vec3 voxelPos = GetVoxelPosition(hitLocalPos);
-                        vec3 samplePos = GetFloodFillSamplePos(voxelPos, hitLocalNormal);
-                        vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
-                        blockLight = lpvSample;
-                    #endif
-
-                    vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
-                    vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
-
-                    float skyLight_NoLm = max(dot(localSkyLightDir, hitLocalNormal), 0.0);
-                    vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
-
-                    reflectColor = albedo * (blockLight + skyLight);
-                #else
-                    lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
-
-                    float sky_NoLM = dot(_pow2(hitLocalNormal), vec3(0.6, 0.25 * hitLocalNormal.y + 0.75, 0.8));
-                    lmcoord.y *= saturate(sky_NoLM);
-
-                    lmcoord = LightMapTex(lmcoord);
-                    vec3 lit = textureLod(texLightmap, lmcoord, 0).rgb;
-                    lit = RGBToLinear(lit);
-
-                    #ifdef LIGHTING_COLORED
-                        vec3 voxelPos = GetVoxelPosition(hitLocalPos);
-                        vec3 samplePos = GetFloodFillSamplePos(voxelPos, hitLocalNormal);
-                        vec3 lpvSample = SampleFloodFill(samplePos); // lmcoord mask won't work here
-                        lit += lpvSample;
-                    #endif
-
-                    reflectColor = albedo * lit;
-                #endif
-
-                reflectColor *= result_tint_color;
-            }
-        #else
-            vec3 screenEnd = projectScreenTrace(viewPos, screenPos, reflectViewDir);
-            vec3 traceClipEnd = screenEnd * 2.0 - 1.0;
-            vec3 traceClipStart = ndcPos;
-
-            vec3 traceClipPos;
-            vec3 traceClipPos_prev = traceClipStart;
-            vec2 traceScreenPos;
-
-            float dither = 0.5;//GetBayerValue(uv);
-            for (uint i = 0; i < MATERIAL_REFLECT_STEPS; i++) {
-                float f = (i + dither) / float(MATERIAL_REFLECT_STEPS);
-                traceClipPos = mix(traceClipStart, traceClipEnd, saturate(f));
-                traceScreenPos = traceClipPos.xy * 0.5 + 0.5;
-                if (saturate(traceScreenPos) != traceScreenPos) break;
-
-                float sampleClipDepth = textureLod(depthtex0, traceScreenPos, 0).r * 2.0 - 1.0;
-                float screenDepthL = linearizeDepth(sampleClipDepth, near, farPlane);
-                float traceDepthL = linearizeDepth(traceClipPos.z, near, farPlane);
-
-                if (screenDepthL < traceDepthL) {
+                if (ray.result_hit) {
                     hit = true;
-                    break;
+                    vec3 albedo = RGBToLinear(ray.result_color);
+
+                    vec3 hitLocalPos = ray.result_position - (cameraPosition - world_offset);
+                    vec3 hitLocalNormal = ray.result_normal;
+
+                    float hit_sky = get_result_sky_light(hitLocalNormal) / 15.0;
+                    vec2 lmcoord = vec2(0.0, hit_sky);
+
+                    vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
+
+                    float shadow = 1.0;
+                    #ifdef SHADOWS_ENABLED
+                        float hitViewDist = length(hitLocalPos);
+
+                        vec3 shadowPos = hitLocalPos;
+                        shadowPos += 0.08 * hitLocalNormal;
+                        shadowPos = mul3(shadowModelView, shadowPos);
+                        shadowPos.z += 0.032 * hitViewDist;
+                        shadowPos = (shadowProjection * vec4(shadowPos, 1.0)).xyz;
+
+                        distort(shadowPos.xy);
+                        shadowPos = shadowPos * 0.5 + 0.5;
+
+                        #ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
+                            shadow = texture(shadowtex1HW, shadowPos).r;
+                        #else
+                            float shadowDepth = textureLod(shadowtex1, shadowPos.xy, 0).r;
+                            shadow = step(shadowPos.z, shadowDepth);
+                        #endif
+
+                        float shadow_NoL = dot(hitLocalNormal, localSkyLightDir);
+                        shadow *= pow(saturate(shadow_NoL), 0.2);
+                    #endif
+
+                    #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
+                        lmcoord = _pow3(lmcoord);
+
+                        // block lightmap coord not supported
+                        vec3 blockLight = vec3(0.0);
+
+                        #ifdef LIGHTING_COLORED
+                            vec3 voxelPos = GetVoxelPosition(hitLocalPos);
+                            vec3 samplePos = GetFloodFillSamplePos(voxelPos, hitLocalNormal);
+                            vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
+                            blockLight = lpvSample;
+                        #endif
+
+                        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
+                        vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
+
+                        float skyLight_NoLm = max(dot(localSkyLightDir, hitLocalNormal), 0.0);
+                        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
+
+                        reflectColor = albedo * (blockLight + skyLight);
+                    #else
+                        lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
+
+                        float sky_NoLM = dot(_pow2(hitLocalNormal), vec3(0.6, 0.25 * hitLocalNormal.y + 0.75, 0.8));
+                        lmcoord.y *= saturate(sky_NoLM);
+
+                        lmcoord = LightMapTex(lmcoord);
+                        vec3 lit = textureLod(texLightmap, lmcoord, 0).rgb;
+                        lit = RGBToLinear(lit);
+
+                        #ifdef LIGHTING_COLORED
+                            vec3 voxelPos = GetVoxelPosition(hitLocalPos);
+                            vec3 samplePos = GetFloodFillSamplePos(voxelPos, hitLocalNormal);
+                            vec3 lpvSample = SampleFloodFill(samplePos); // lmcoord mask won't work here
+                            lit += lpvSample;
+                        #endif
+
+                        reflectColor = albedo * lit;
+                    #endif
+
+                    reflectColor *= result_tint_color;
                 }
+            #else
+                vec3 screenEnd = projectScreenTrace(viewPos, screenPos, reflectViewDir);
+                vec3 traceClipEnd = screenEnd * 2.0 - 1.0;
+                vec3 traceClipStart = ndcPos;
 
-                traceClipPos_prev = traceClipPos;
-                // traceDepthL_prev = traceDepthL;
-            }
+                vec3 traceClipPos;
+                vec3 traceClipPos_prev = traceClipStart;
+                vec2 traceScreenPos;
 
-            if (hit) {
-                traceClipStart = traceClipPos_prev;
-                traceClipEnd = traceClipPos;
-
-                for (uint i = 0; i <= MATERIAL_REFLECT_REFINE_STEPS; i++) {
-                    float f = (i + dither) / float(MATERIAL_REFLECT_REFINE_STEPS);
+                float dither = 0.5;//GetBayerValue(uv);
+                for (uint i = 0; i < MATERIAL_REFLECT_STEPS; i++) {
+                    float f = (i + dither) / float(MATERIAL_REFLECT_STEPS);
                     traceClipPos = mix(traceClipStart, traceClipEnd, saturate(f));
-                    vec2 testPos = traceClipPos.xy * 0.5 + 0.5;
-                    if (saturate(testPos) != testPos) break;
+                    traceScreenPos = traceClipPos.xy * 0.5 + 0.5;
+                    if (saturate(traceScreenPos) != traceScreenPos) break;
 
-                    float sampleClipDepth = textureLod(depthtex0, testPos, 0).r * 2.0 - 1.0;
+                    float sampleClipDepth = textureLod(depthtex0, traceScreenPos, 0).r * 2.0 - 1.0;
                     float screenDepthL = linearizeDepth(sampleClipDepth, near, farPlane);
                     float traceDepthL = linearizeDepth(traceClipPos.z, near, farPlane);
 
                     if (screenDepthL < traceDepthL) {
+                        hit = true;
                         break;
                     }
 
-                    traceScreenPos = testPos;
+                    traceClipPos_prev = traceClipPos;
+                    // traceDepthL_prev = traceDepthL;
                 }
+
+                if (hit) {
+                    traceClipStart = traceClipPos_prev;
+                    traceClipEnd = traceClipPos;
+
+                    for (uint i = 0; i <= MATERIAL_REFLECT_REFINE_STEPS; i++) {
+                        float f = (i + dither) / float(MATERIAL_REFLECT_REFINE_STEPS);
+                        traceClipPos = mix(traceClipStart, traceClipEnd, saturate(f));
+                        vec2 testPos = traceClipPos.xy * 0.5 + 0.5;
+                        if (saturate(testPos) != testPos) break;
+
+                        float sampleClipDepth = textureLod(depthtex0, testPos, 0).r * 2.0 - 1.0;
+                        float screenDepthL = linearizeDepth(sampleClipDepth, near, farPlane);
+                        float traceDepthL = linearizeDepth(traceClipPos.z, near, farPlane);
+
+                        if (screenDepthL < traceDepthL) {
+                            break;
+                        }
+
+                        traceScreenPos = testPos;
+                    }
+                }
+
+                if (hit) {
+                    // float roughL = _pow2(roughness);
+                    float mip = roughness * 4.0;
+
+                    reflectColor = textureLod(TEX_FINAL, traceScreenPos, mip).rgb;
+                }
+            #endif
+
+            if (!hit) {
+                vec3 reflectLocalDir = mat3(gbufferModelViewInverse) * reflectViewDir;
+                reflectColor = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), reflectLocalDir.y);
+                reflectColor *= lmcoord_y;
             }
 
-            if (hit) {
-                // float roughL = _pow2(roughness);
-                float mip = roughness * 4.0;
+            float NoV = dot(viewNormal, -viewDir);
+            reflectColor *= F_schlick(NoV, f0, 1.0);
 
-                reflectColor = textureLod(TEX_FINAL, traceScreenPos, mip).rgb;
-            }
-        #endif
-
-        if (!hit) {
-            vec3 reflectLocalDir = mat3(gbufferModelViewInverse) * reflectViewDir;
-            reflectColor = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), reflectLocalDir.y);
-            reflectColor *= lmcoord_y;
+            reflectColor *= _pow2(smoothness);
         }
-
-        float NoV = dot(viewNormal, -viewDir);
-        reflectColor *= F_schlick(NoV, f0, 1.0);
-
-        reflectColor *= _pow2(smoothness);
 
         vec3 albedo = RGBToLinear(reflectDataR.rgb);
         vec3 tint = mix(vec3(1.0), albedo, metalness);

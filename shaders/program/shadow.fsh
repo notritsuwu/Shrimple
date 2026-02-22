@@ -20,6 +20,4 @@ void main() {
         vec4 color = texture(gtexture, texcoord);
         if (color.a < alphaTestRef) discard;
     #endif
-
-//    outColor = color;
 }

@@ -2,10 +2,9 @@
 #include "/lib/common.glsl"
 
 in VertexData {
-//    vec4 color;
     vec2 lmcoord;
     vec3 localPos;
-    vec3 localNormal;
+    flat uint localNormal;
 } vIn;
 
 
@@ -48,6 +47,7 @@ uniform vec2 viewSize;
 #include "/lib/oklab.glsl"
 #include "/lib/hsv.glsl"
 #include "/lib/fog.glsl"
+#include "/lib/octohedral.glsl"
 #include "/lib/sampling/lightmap.glsl"
 
 #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
@@ -68,10 +68,6 @@ uniform vec2 viewSize;
     #include "/lib/shadows.glsl"
 #endif
 
-#ifdef LIGHTING_REFLECT_ENABLED
-    #include "/lib/octohedral.glsl"
-#endif
-
 #include "/photonics/photonics.glsl"
 
 
@@ -88,7 +84,8 @@ uniform vec2 viewSize;
 
 void main() {
     vec3 rayOrigin = vIn.localPos + (cameraPosition - world_offset);
-    vec3 localNormal = normalize(vIn.localNormal);
+
+    vec3 localNormal = OctDecode(unpackUnorm2x16(vIn.localNormal));
 
     // avoid view bobbing
     vec3 viewPos = mul3(gbufferModelView, vIn.localPos);

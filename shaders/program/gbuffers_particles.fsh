@@ -2,7 +2,7 @@
 #include "/lib/common.glsl"
 
 in VertexData {
-    vec4 color;
+    flat uint color;
     vec2 lmcoord;
     vec2 texcoord;
     vec3 localPos;
@@ -72,9 +72,16 @@ uniform int vxRenderDistance;
     #include "/lib/shadows.glsl"
 #endif
 
-/* RENDERTARGETS: 0 */
-layout(location = 0) out vec4 outFinal;
 
+#ifdef LIGHTING_REFLECT_ENABLED
+    /* RENDERTARGETS: 0,1,2 */
+    layout(location = 0) out vec4 outFinal;
+    layout(location = 1) out uint outReflectNormal;
+    layout(location = 2) out uvec2 outReflectSpecular;
+#else
+    /* RENDERTARGETS: 0 */
+    layout(location = 0) out vec4 outFinal;
+#endif
 
 void main() {
     vec2 texcoord = vIn.texcoord;
@@ -85,10 +92,11 @@ void main() {
 
     if (color.a < alphaTestRef) discard;
 
+    vec4 tint = unpackUnorm4x8(vIn.color);
     #if defined(RENDER_TERRAIN) && LIGHTING_MODE == LIGHTING_MODE_ENHANCED
-        color.rgb *= vIn.color.rgb;
+        color.rgb *= tint.rgb;
     #else
-        color *= vIn.color;
+        color *= tint;
     #endif
 
     #ifdef MATERIAL_PBR_ENABLED
@@ -203,4 +211,9 @@ void main() {
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
     outFinal = color;
+
+    #ifdef LIGHTING_REFLECT_ENABLED
+        outReflectNormal = 0u;
+        outReflectSpecular = uvec2(0u);
+    #endif
 }

@@ -3,7 +3,7 @@
 
 
 in VertexData {
-    flat vec4 color;
+    flat uint color;
     vec2 lmcoord;
     vec2 texcoord;
     vec3 localPos;
@@ -12,39 +12,25 @@ in VertexData {
 uniform sampler2D gtexture;
 uniform sampler2D lightmap;
 
-//uniform mat4 gbufferModelView;
-//uniform mat4 gbufferModelViewInverse;
 uniform vec3 cameraPosition;
-//uniform vec3 upPosition;
-//uniform float far;
-
-//uniform vec3 fogColor;
-//uniform float fogDensity;
-//uniform float fogStart;
-//uniform float fogEnd;
-//uniform int fogShape;
-//uniform int fogMode;
-
 uniform float alphaTestRef;
 uniform int renderStage;
-//uniform int isEyeInWater;
-//uniform vec3 skyColor;
 
 #include "/lib/sampling/lightmap.glsl"
 
 
 #ifdef LIGHTING_REFLECT_ENABLED
-    /* RENDERTARGETS: 0,1 */
+    /* RENDERTARGETS: 0,1,2 */
     layout(location = 0) out vec4 outFinal;
-    layout(location = 1) out uvec2 outReflect;
+    layout(location = 1) out uint outReflectNormal;
+    layout(location = 2) out uvec2 outReflectSpecular;
 #else
     /* RENDERTARGETS: 0 */
     layout(location = 0) out vec4 outFinal;
 #endif
 
-
 void main() {
-    vec4 color = vIn.color;
+    vec4 color = unpackUnorm4x8(vIn.color);
     float emission = 0.0;
 
     if (renderStage == MC_RENDER_STAGE_OUTLINE) {
@@ -78,10 +64,12 @@ void main() {
     vec3 lightmap = RGBToLinear(texture(lightmap, lmFinal).rgb);
     final.rgb *= lightmap + emission;
 
-//    #ifdef SKY_BORDER_FOG_ENABLED
-//        vec3 localViewDir = normalize(vIn.localPos);
-//        ApplyFog(final, vIn.localPos, localViewDir);
-//    #endif
+    // TODO: fog?
 
     outFinal = final;
+
+    #ifdef LIGHTING_REFLECT_ENABLED
+        outReflectNormal = 0u;
+        outReflectSpecular = uvec2(0u);
+    #endif
 }

@@ -15,15 +15,12 @@ in VertexData {
     #endif
 
     #ifdef MATERIAL_PBR_ENABLED
-//        flat vec4 localTangent;
         flat uint localTangent;
         flat float localTangentW;
     #endif
 
     #ifdef MATERIAL_PARALLAX_ENABLED
         vec3 tangentViewPos;
-//        flat vec2 atlasTilePos;
-//        flat vec2 atlasTileSize;
         flat uint atlasTilePos;
         flat uint atlasTileSize;
     #endif
@@ -121,10 +118,6 @@ uniform int vxRenderDistance;
     #include "/lib/shadows.glsl"
 #endif
 
-#ifdef LIGHTING_REFLECT_ENABLED
-    #include "/lib/octohedral.glsl"
-#endif
-
 #ifdef LIGHTING_HAND
     #include "/lib/hand-light.glsl"
 
@@ -201,7 +194,6 @@ void main() {
             }
         #endif
 
-//        vec3 localTangent = normalize(vIn.localTangent.xyz);
         vec3 localTangent = OctDecode(unpackUnorm2x16(vIn.localTangent));
         mat3 matLocalTBN = BuildTBN(localGeoNormal, localTangent, vIn.localTangentW);
         vec3 localTexNormal = normalize(matLocalTBN * tex_normal);
@@ -358,7 +350,7 @@ void main() {
                 RayJob ray = RayJob(rtOrigin, lightDir,
                     vec3(0), vec3(0), vec3(0), false);
 
-                RAY_ITERATION_COUNT = 32;
+                RAY_ITERATION_COUNT = PHOTONICS_LIGHT_STEPS;
 //                breakOnEmpty=true;
 
                 trace_ray(ray, true);

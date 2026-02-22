@@ -5,7 +5,6 @@ out VertexData {
     vec4 color;
     vec2 texcoord;
     vec3 localPos;
-//    vec3 localNormal;
 } vOut;
 
 uniform mat4 gbufferModelViewInverse;

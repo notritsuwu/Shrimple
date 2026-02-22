@@ -49,7 +49,7 @@ void main() {
             || renderStage == MC_RENDER_STAGE_TERRAIN_CUTOUT_MIPPED
             || renderStage == MC_RENDER_STAGE_TERRAIN_TRANSLUCENT;
 
-        uint blockId = uint(mc_Entity.x + 0.5);
+        uint blockId = uint(mc_Entity.x + EPSILON);
         if (mc_Entity.x < 0.0) blockId = BLOCK_SOLID;
 
         bool ignoreBlock = blockId <= 0

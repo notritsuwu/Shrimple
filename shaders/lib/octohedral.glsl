@@ -1,5 +1,4 @@
 vec2 OctWrap(const in vec2 v) {
-//    return (1.0 - abs(v.yx)) * select(v.xy >= 0.0, 1.0, -1.0);
     return (1.0 - abs(v.yx)) * (step(0.0, v.xy) * 2.0 - 1.0);
 }
 
@@ -16,7 +15,6 @@ vec3 OctDecode(vec2 f) {
     // https://twitter.com/Stubbesaurus/status/937994790553227264
     vec3 n = vec3(f.xy, 1.0 - sumOf(abs(f.xy)));
     float t = saturate(-n.z);
-//    n.xy += select(n.xy >= 0.0, -t, t);
     n.xy += mix(vec2(t), vec2(-t), step(0.0, n.xy));
     return normalize(n);
 }
