@@ -53,7 +53,7 @@ uniform sampler2D gtexture;
     uniform sampler3D texFloodFillB;
 #endif
 
-#if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED)
+#if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED) && !defined(PHOTONICS_LIGHT_ENABLED)
     uniform sampler2D texBlockLight;
 #endif
 
@@ -64,8 +64,6 @@ uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
 uniform vec4 entityColor;
-uniform int heldBlockLightValue;
-uniform int heldBlockLightValue2;
 uniform float alphaTestRef;
 uniform vec3 sunPosition;
 uniform vec3 shadowLightPosition;
@@ -80,6 +78,8 @@ uniform vec3 relativeEyePosition;
 uniform int isEyeInWater;
 uniform int heldItemId;
 uniform int heldItemId2;
+uniform int heldBlockLightValue;
+uniform int heldBlockLightValue2;
 uniform ivec2 atlasSize;
 uniform vec2 viewSize;
 
@@ -120,10 +120,6 @@ uniform int vxRenderDistance;
 
 #ifdef LIGHTING_HAND
     #include "/lib/hand-light.glsl"
-
-    #ifdef PHOTONICS_LIGHT_ENABLED
-        #include "/photonics/photonics.glsl"
-    #endif
 #endif
 
 
@@ -335,22 +331,6 @@ void main() {
         float NoLm = max(dot(localTexNormal, -lightDir), 0.0);
 
         if (heldBlockLightValue > 0 || heldBlockLightValue2 > 0) {
-//            #ifdef PHOTONICS_LIGHT_ENABLED
-//                vec3 rtOrigin = handLightPos + (cameraPosition - world_offset);
-//
-//                RayJob ray = RayJob(rtOrigin, lightDir,
-//                    vec3(0), vec3(0), vec3(0), false);
-//
-//                RAY_ITERATION_COUNT = PHOTONICS_LIGHT_STEPS;
-////                breakOnEmpty=true;
-//
-//                trace_ray(ray, true);
-//
-//                if (ray.result_hit && lengthSq(rtOrigin - ray.result_position) < _pow2(handDist) - 0.004) {
-//                    NoLm = 0.0;
-//                }
-//            #endif
-
             color.rgb += albedo * NoLm * (_pow2(handLight1) * handLightColor1 + _pow2(handLight2) * handLightColor2);
         }
     #endif

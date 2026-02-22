@@ -19,6 +19,10 @@ uniform usampler2D TEX_REFLECT_NORMAL;
 uniform usampler2D TEX_REFLECT_SPECULAR;
 uniform sampler2D texPhotonicsIndirect;
 
+#ifdef LIGHTING_HAND
+    uniform sampler2D texBlockLight;
+#endif
+
 uniform float near;
 uniform float farPlane;
 uniform vec3 cameraPosition;
@@ -29,9 +33,20 @@ uniform int frameCounter;
 uniform vec2 viewSize;
 uniform vec2 taa_offset = vec2(0.0);
 
+uniform int heldItemId;
+uniform int heldItemId2;
+uniform int heldBlockLightValue;
+uniform int heldBlockLightValue2;
+uniform bool firstPersonCamera;
+uniform vec3 relativeEyePosition;
+
 #include "/photonics/photonics.glsl"
 #include "/lib/sampling/depth.glsl"
 #include "/lib/octohedral.glsl"
+
+#ifdef LIGHTING_HAND
+    #include "/lib/hand-light.glsl"
+#endif
 
 
 vec3 unprojectCorner(const in float screenPosX, const in float screenPosY) {
@@ -120,7 +135,7 @@ void main() {
 
     vec3 lighting = vec3(0.0);
 
-    if (depth < 1.0 && counter > 0) {
+    if (depth < 1.0) { // && counter > 0
         vec2 texcoord = (gl_GlobalInvocationID.xy + 0.5) / viewSize;
 
         #ifdef TAA_ENABLED
@@ -174,13 +189,63 @@ void main() {
             lighting += NoLm * _pow2(att) * lightColor;
         }
 
+        #ifdef LIGHTING_HAND
+            vec3 handLightPos = GetHandLightPosition();
+            float handDist = distance(localPos, handLightPos);
+
+            float handLight1 = max(heldBlockLightValue  - handDist, 0.0) / 15.0;
+            float handLight2 = max(heldBlockLightValue2 - handDist, 0.0) / 15.0;
+
+            vec3 handLightColor1 = vec3(1.0);
+            if (heldItemId >= 0) {
+                ivec2 blockLightUV1 = ivec2(heldItemId % 256, heldItemId / 256);
+                vec4 lightColorRange1 = texelFetch(texBlockLight, blockLightUV1, 0);
+                handLightColor1 = RGBToLinear(lightColorRange1.rgb);
+            }
+
+            vec3 handLightColor2 = vec3(1.0);
+            if (heldItemId2 >= 0) {
+                ivec2 blockLightUV2 = ivec2(heldItemId2 % 256, heldItemId2 / 256);
+                vec4 lightColorRange2 = texelFetch(texBlockLight, blockLightUV2, 0);
+                handLightColor2 = RGBToLinear(lightColorRange2.rgb);
+            }
+
+            vec3 lightDir = normalize(localPos - handLightPos);
+            float NoLm = max(dot(localTexNormal, -lightDir), 0.0);
+
+            if (heldBlockLightValue > 0 || heldBlockLightValue2 > 0) {
+                vec3 rtOrigin = handLightPos + (cameraPosition - world_offset);
+
+                RayJob ray = RayJob(rtOrigin, lightDir,
+                    vec3(0), vec3(0), vec3(0), false);
+
+                RAY_ITERATION_COUNT = PHOTONICS_LIGHT_STEPS;
+                // breakOnEmpty=true;
+
+                trace_ray(ray, true);
+
+                vec3 tint = vec3(1.0);
+                if (ray.result_hit) {
+                    tint = result_tint_color;
+
+                    if (lengthSq(rtOrigin - ray.result_position) < _pow2(handDist) - 0.02) {
+                        NoLm = 0.0;
+                    }
+                }
+
+                lighting += NoLm * result_tint_color * (_pow2(handLight1) * handLightColor1 + _pow2(handLight2) * handLightColor2);
+            }
+        #endif
+
+        #ifdef PH_ENABLE_GI
+            vec3 ph_indirect = texelFetch(texPhotonicsIndirect, uv, 0).rgb;
+            lighting += 10.0 * ph_indirect;
+        #endif
+
         uvec2 reflectData = texelFetch(TEX_REFLECT_SPECULAR, uv, 0).rg;
         vec4 reflectDataR = unpackUnorm4x8(reflectData.r);
         lighting *= RGBToLinear(reflectDataR.rgb);
     }
-
-    vec3 ph_indirect = texelFetch(texPhotonicsIndirect, uv, 0).rgb;
-    lighting += 10.0 * ph_indirect;
 
     vec3 src = texelFetch(TEX_FINAL, uv, 0).rgb;
     imageStore(IMG_FINAL, uv, vec4(src + lighting, 1.0));
