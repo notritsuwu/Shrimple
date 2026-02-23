@@ -1,17 +1,14 @@
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
-uniform int isEyeInWater;
-
 #include "/lib/blocks.glsl"
 #include "/lib/sampling/lightmap.glsl"
+#include "/lib/octohedral.glsl"
 #include "/lib/oklab.glsl"
 #include "/lib/fog.glsl"
 
 
-/* RENDERTARGETS: 0 */
-layout(location = 0) out vec4 outFinal;
-
+#include "_output.glsl"
 
 void voxy_emitFragment(VoxyFragmentParameters parameters) {
     vec4 color = parameters.sampledColour;
@@ -40,9 +37,24 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     #endif
 
     vec3 albedo = RGBToLinear(color.rgb);
-    float viewDist = length(localPos);
 
+    #ifdef DEBUG_WHITEWORLD
+        albedo = vec3(0.86);
+    #endif
+
+    vec4 specularData = vec4(0.0, 0.04, 0.0, 0.0);
+
+    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+        if (parameters.customId == BLOCK_WATER) {
+            // TODO: add option to make clear?
+            // albedo = vec3(0.0);
+            specularData = vec4(0.98, 0.02, 0.0, 0.0);
+        }
+    #endif
+
+    float viewDist = length(localPos);
     vec2 lmcoord = parameters.lightMap;
+
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         lmcoord = _pow3(lmcoord);
 
@@ -87,4 +99,17 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
     outFinal = color;
+
+    #ifdef PHOTONICS_LIGHT_ENABLED
+        outGeoNormal = packUnorm2x16(OctEncode(localNormal));
+    #endif
+
+    #if defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
+        vec3 viewNormal = mat3(gbufferModelView) * localNormal;
+        outTexNormal = packUnorm2x16(OctEncode(viewNormal));
+
+        outReflectSpecular = uvec2(
+            packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord.y)),
+            packUnorm4x8(specularData));
+    #endif
 }
