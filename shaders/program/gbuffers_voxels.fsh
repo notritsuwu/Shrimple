@@ -43,6 +43,7 @@ uniform int frameCounter;
 uniform int isEyeInWater;
 uniform ivec2 atlasSize;
 uniform vec2 viewSize;
+uniform int vxRenderDistance;
 
 #include "/lib/oklab.glsl"
 #include "/lib/hsv.glsl"
@@ -214,7 +215,7 @@ void main() {
     #ifdef LIGHTING_REFLECT_ENABLED
         vec3 viewNormal = mat3(gbufferModelView) * localNormal;
 
-        outReflectNormal = packUnorm2x16(OctEncode(viewNormal));
+        outTexNormal = packUnorm2x16(OctEncode(viewNormal));
 
         outReflectSpecular = uvec2(
             packUnorm4x8(vec4(LinearToRGB(albedo.rgb), vIn.lmcoord.y)),

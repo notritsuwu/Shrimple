@@ -385,10 +385,10 @@ void main() {
         outGeoNormal = packUnorm2x16(OctEncode(localGeoNormal));
     #endif
 
-    #ifdef LIGHTING_REFLECT_ENABLED
+    #if defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
         vec3 viewTexNormal = mat3(gbufferModelView) * localTexNormal;
 
-        outReflectNormal = packUnorm2x16(OctEncode(viewTexNormal));
+        outTexNormal = packUnorm2x16(OctEncode(viewTexNormal));
 
         outReflectSpecular = uvec2(
             packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord.y)),

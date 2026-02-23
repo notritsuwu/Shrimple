@@ -57,6 +57,7 @@ const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 4
 #define PHOTONICS_LIGHT_ENABLED
 #define PHOTONICS_LIGHT_STEPS 16 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32]
 
+//#define DEBUG
 //#define DEBUG_WHITEWORLD
 
 
@@ -111,6 +112,10 @@ int sumOf(ivec2 vec) {return vec.x + vec.y;}
 int sumOf(ivec3 vec) {return vec.x + vec.y + vec.z;}
 float sumOf(vec2 vec) {return vec.x + vec.y;}
 float sumOf(vec3 vec) {return vec.x + vec.y + vec.z;}
+
+float lengthSq(const in vec2 v) {
+    return dot(v, v);
+}
 
 float lengthSq(const in vec3 v) {
     return dot(v, v);

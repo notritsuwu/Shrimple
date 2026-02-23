@@ -12,7 +12,7 @@ in vec2 texcoord;
 
 uniform sampler2D depthtex0;
 uniform sampler2D TEX_FINAL;
-uniform usampler2D TEX_REFLECT_NORMAL;
+uniform usampler2D TEX_TEX_NORMAL;
 uniform usampler2D TEX_REFLECT_SPECULAR;
 
 #ifdef PHOTONICS_REFLECT_ENABLED
@@ -44,6 +44,7 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
+uniform int vxRenderDistance;
 uniform int frameCounter;
 
 uniform vec2 taa_offset = vec2(0.0);
@@ -139,16 +140,16 @@ void main() {
             vec3 screenPos = vec3(texcoord, depth);
             vec3 ndcPos = screenPos * 2.0 - 1.0;
 
-            #ifdef TAA_ENABLED
-                ndcPos.xy -= taa_offset * 2.0;
-            #endif
+//            #ifdef TAA_ENABLED
+//                ndcPos.xy -= taa_offset * 2.0;
+//            #endif
 
             // TODO: fix hand depth
 
             vec3 viewPos = project(gbufferProjectionInverse, ndcPos);
             vec3 viewDir = normalize(viewPos);
 
-            uint reflectNormalData = texelFetch(TEX_REFLECT_NORMAL, uv, 0).r;
+            uint reflectNormalData = texelFetch(TEX_TEX_NORMAL, uv, 0).r;
             vec3 viewNormal = OctDecode(unpackUnorm2x16(reflectNormalData));
 
             float lmcoord_y = reflectDataR.w;
@@ -259,6 +260,11 @@ void main() {
                 vec3 traceClipPos;
                 vec3 traceClipPos_prev = traceClipStart;
                 vec2 traceScreenPos;
+
+//                #ifdef TAA_ENABLED
+//                    traceClipStart.xy -= taa_offset * 2.0;
+//                    traceClipEnd.xy   -= taa_offset * 2.0;
+//                #endif
 
                 float dither = 0.5;//GetBayerValue(uv);
                 for (uint i = 0; i < MATERIAL_REFLECT_STEPS; i++) {

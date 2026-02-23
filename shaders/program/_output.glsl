@@ -1,6 +1,6 @@
 #if defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
     layout(location = 0) out vec4 outFinal;
-    layout(location = 1) out uint outReflectNormal;
+    layout(location = 1) out uint outTexNormal;
     layout(location = 2) out uvec2 outReflectSpecular;
 
     #ifdef PHOTONICS_LIGHT_ENABLED

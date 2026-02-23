@@ -28,7 +28,7 @@ float sumOf(vec3 vec) {return vec.x + vec.y + vec.z;}
 
 
 uniform usampler2D TEX_GEO_NORMAL;
-uniform usampler2D TEX_REFLECT_NORMAL;
+uniform usampler2D TEX_TEX_NORMAL;
 uniform usampler2D TEX_REFLECT_SPECULAR;
 
 uniform vec2 viewSize;
@@ -71,7 +71,7 @@ void load_fragment_variables(
 ) {
     ivec2 uv = ivec2(gl_FragCoord.xy);
 
-    uint reflectNormalData = texelFetch(TEX_REFLECT_NORMAL, uv, 0).r;
+    uint reflectNormalData = texelFetch(TEX_TEX_NORMAL, uv, 0).r;
     vec3 viewNormal = OctDecode(unpackUnorm2x16(reflectNormalData));
     world_normal_mapped = mat3(gbufferModelViewInverse) * viewNormal;
 

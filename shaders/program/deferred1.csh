@@ -15,7 +15,7 @@ layout(rgba16f) uniform image2D IMG_FINAL;
 
 uniform sampler2D TEX_DEPTH;
 uniform sampler2D TEX_FINAL;
-uniform usampler2D TEX_REFLECT_NORMAL;
+uniform usampler2D TEX_TEX_NORMAL;
 uniform usampler2D TEX_REFLECT_SPECULAR;
 uniform sampler2D texPhotonicsIndirect;
 
@@ -28,9 +28,11 @@ uniform float farPlane;
 uniform vec3 cameraPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferProjection;
 uniform mat4 gbufferProjectionInverse;
 uniform int frameCounter;
 uniform vec2 viewSize;
+uniform float aspectRatio;
 uniform vec2 taa_offset = vec2(0.0);
 
 uniform int heldItemId;
@@ -52,6 +54,12 @@ uniform vec3 relativeEyePosition;
 vec3 unprojectCorner(const in float screenPosX, const in float screenPosY) {
     vec3 ndcPos = vec3(screenPosX, screenPosY, 1.0) * 2.0 - 1.0;
     return project(gbufferProjectionInverse, ndcPos);
+}
+
+float getLightRange(const in vec3 color, const in vec2 attenuation) {
+    const float falloff = 1.0;
+    float lum = luminance(color);
+    return sqrt((((lum / 0.001) - 0.9) / attenuation.y) / falloff);
 }
 
 
@@ -87,12 +95,14 @@ void main() {
     float depthMax = depthMaxInt / float(UINT_MAX) * farPlane;
 
     if (gl_LocalInvocationIndex < PH_MAX_LIGHTS) {
-//        PointLight light = ap.lights[gl_LocalInvocationIndex];
         Light light = load_light(int(gl_LocalInvocationIndex));
+//        float lightRange = getLightRange(light.color, light.attenuation);
+        ivec2 blockLightUV = ivec2(light.blockId % 256, light.blockId / 256);
+        vec4 lightColorRange = texelFetch(texBlockLight, blockLightUV, 0);
+//        vec3 ightColor = RGBToLinear(lightColorRange.rgb);
+        float lightRange = lightColorRange.a * 32.0;
 
-//        if (any(greaterThan(light.color, vec3(0.0)))) {
-            float lightRange = 15.0;//ap.blocks[light.block].emission + 0.5;
-
+        if (lightRange > EPSILON) {
             // compute view-space position and collision test
             vec3 lightLocalPos = light.position - (cameraPosition - world_offset);
             vec3 lightViewPos = mul3(gbufferModelView, lightLocalPos);
@@ -101,31 +111,48 @@ void main() {
             if (-lightViewPos.z + lightRange < depthMin) hit = false;
             if (-lightViewPos.z - lightRange > depthMax) hit = false;
 
-            // test X/Y
+
+
+            vec3 lightClipPos = project(gbufferProjection, lightViewPos);
+            vec2 lightScreenPos = lightClipPos.xy * 0.5 + 0.5;
+
             uvec2 groupPos = gl_WorkGroupID.xy * 16u;
-            vec2 groupPosMin = groupPos / viewSize;
-            vec2 groupPosMax = (groupPos + 16u) / viewSize;
+            vec2 screenMin = groupPos / viewSize;
+            vec2 screenMax = (groupPos + 16u) / viewSize;
+            vec2 nearest = clamp(lightScreenPos, screenMin, screenMax);
 
-            vec3 c1 = unprojectCorner(groupPosMin.x, groupPosMin.y);
-            vec3 c2 = unprojectCorner(groupPosMax.x, groupPosMin.y);
-            vec3 c3 = unprojectCorner(groupPosMin.x, groupPosMax.y);
-            vec3 c4 = unprojectCorner(groupPosMax.x, groupPosMax.y);
+            float f = 0.5 * gbufferProjection[1][1];
+            float screenRadius = f * (lightRange + 0.5) / -lightViewPos.z;
 
-            vec3 clipDown  = normalize(cross(c2, c1));
-            vec3 clipRight = normalize(cross(c4, c2));
-            vec3 clipUp    = normalize(cross(c3, c4));
-            vec3 clipLeft  = normalize(cross(c1, c3));
+            float lightDistSq = lengthSq((nearest - lightScreenPos) * vec2(aspectRatio, 1.0));
+            if (lightDistSq > _pow2(screenRadius)) hit = false;
 
-            if (dot(clipDown,  lightViewPos) > lightRange) hit = false;
-            if (dot(clipRight, lightViewPos) > lightRange) hit = false;
-            if (dot(clipUp,    lightViewPos) > lightRange) hit = false;
-            if (dot(clipLeft,  lightViewPos) > lightRange) hit = false;
+
+            // test X/Y
+//            uvec2 groupPos = gl_WorkGroupID.xy * 16u;
+//            vec2 groupPosMin = groupPos / viewSize;
+//            vec2 groupPosMax = (groupPos + 16u) / viewSize;
+//
+//            vec3 c1 = unprojectCorner(groupPosMin.x, groupPosMin.y);
+//            vec3 c2 = unprojectCorner(groupPosMax.x, groupPosMin.y);
+//            vec3 c3 = unprojectCorner(groupPosMin.x, groupPosMax.y);
+//            vec3 c4 = unprojectCorner(groupPosMax.x, groupPosMax.y);
+//
+//            vec3 clipDown  = normalize(cross(c2, c1));
+//            vec3 clipRight = normalize(cross(c4, c2));
+//            vec3 clipUp    = normalize(cross(c3, c4));
+//            vec3 clipLeft  = normalize(cross(c1, c3));
+//
+//            if (dot(clipDown,  lightViewPos) > lightRange) hit = false;
+//            if (dot(clipRight, lightViewPos) > lightRange) hit = false;
+//            if (dot(clipUp,    lightViewPos) > lightRange) hit = false;
+//            if (dot(clipLeft,  lightViewPos) > lightRange) hit = false;
 
             if (hit) {
                 uint index = atomicAdd(counter, 1u);
                 sharedLightList[index] = int(gl_LocalInvocationIndex);
             }
-        //}
+        }
     }
 
 //    GroupMemoryBarrierWithGroupSync();
@@ -149,7 +176,7 @@ void main() {
         vec3 viewPos = project(gbufferProjectionInverse, ndcPos);
         vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
 
-        uint reflectNormalData = texelFetch(TEX_REFLECT_NORMAL, uv, 0).r;
+        uint reflectNormalData = texelFetch(TEX_TEX_NORMAL, uv, 0).r;
         vec3 viewTexNormal = OctDecode(unpackUnorm2x16(reflectNormalData));
         vec3 localTexNormal = mat3(gbufferModelViewInverse) * viewTexNormal;
 
@@ -161,8 +188,13 @@ void main() {
             vec3 lightOffset = lightLocalPos - localPos;
             float lightDist = length(lightOffset);
             vec3 lightDir = lightOffset / lightDist;
-            vec3 lightColor = 3.0 * light.color;
-            float lightRange = 15.0; // TODO
+
+//            vec3 lightColor = 3.0 * light.color;
+//            float lightRange = getLightRange(light.color, light.attenuation);
+            ivec2 blockLightUV = ivec2(light.blockId % 256, light.blockId / 256);
+            vec4 lightColorRange = texelFetch(texBlockLight, blockLightUV, 0);
+            vec3 lightColor = RGBToLinear(lightColorRange.rgb);
+            float lightRange = lightColorRange.a * 32.0;
 
             float NoLm = max(dot(localTexNormal, lightDir), 0.0);
             float att = 1.0 - saturate(lightDist / lightRange);
@@ -181,13 +213,17 @@ void main() {
             if (ray.result_hit) {
                 lightColor *= result_tint_color;
 
-                if (lengthSq(rtOrigin - ray.result_position) < _pow2(lightDist) - 0.02) {
-                    att = 0.0;
-                }
+//                if (lengthSq(rtOrigin - ray.result_position) < _pow2(lightDist) - 0.02) {
+//                    att = 0.0;
+//                }
             }
 
             lighting += NoLm * _pow2(att) * lightColor;
         }
+
+        #ifdef DEBUG
+            lighting = vec3(1,counter,0);
+        #endif
 
         #ifdef LIGHTING_HAND
             vec3 handLightPos = GetHandLightPosition();
@@ -237,10 +273,10 @@ void main() {
             }
         #endif
 
-        #ifdef PH_ENABLE_GI
-            vec3 ph_indirect = texelFetch(texPhotonicsIndirect, uv, 0).rgb;
-            lighting += 10.0 * ph_indirect;
-        #endif
+//        #ifdef PH_ENABLE_GI
+//            vec3 ph_indirect = texelFetch(texPhotonicsIndirect, uv, 0).rgb;
+//            lighting += 10.0 * ph_indirect;
+//        #endif
 
         uvec2 reflectData = texelFetch(TEX_REFLECT_SPECULAR, uv, 0).rg;
         vec4 reflectDataR = unpackUnorm4x8(reflectData.r);

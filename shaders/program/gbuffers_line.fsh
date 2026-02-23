@@ -61,7 +61,7 @@ void main() {
     outFinal = final;
 
     #ifdef LIGHTING_REFLECT_ENABLED
-        outReflectNormal = 0u;
+        outTexNormal = 0u;
         outReflectSpecular = uvec2(0u);
     #endif
 }
