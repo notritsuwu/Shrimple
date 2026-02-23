@@ -38,6 +38,15 @@ uniform mat4 gbufferPreviousModelView;
 #include "/lib/blocks.glsl"
 
 
+bool IsLightBlock(const in uint blockId) {
+    #ifdef PHOTONICS_LIGHT_ENABLED
+        return blockId == BLOCK_LAVA
+            || blockId == BLOCK_CAVEVINE_BERRIES;
+    #else
+        return blockId > 0u && blockId < 65535u;
+    #endif
+}
+
 vec3 GetLpvValue(const in ivec3 texCoord) {
     if (!IsInVoxelBounds(texCoord)) return vec3(0.0);
 
@@ -169,7 +178,7 @@ void main() {
 
     vec3 lightColor = vec3(0.0);
     float lightRange = 0.0;
-    if (blockId > 0 && blockId < 65535) {
+    if (IsLightBlock(blockId)) {
         ivec2 blockLightUV = ivec2(blockId % 256, blockId / 256);
         vec4 lightColorRange = texelFetch(texBlockLight, blockLightUV, 0);
 

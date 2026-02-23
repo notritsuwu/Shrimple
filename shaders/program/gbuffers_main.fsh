@@ -241,11 +241,6 @@ void main() {
     #ifdef PHOTONICS_LIGHT_ENABLED
         lmcoord.x = 0.0;
     #else
-        #ifdef LIGHTING_COLORED
-            vec3 voxelPos = GetVoxelPosition(vIn.localPos);
-            float lpvFade = GetVoxelFade(voxelPos);
-        #endif
-
         #ifdef LIGHTING_HAND
             vec3 handLightPos = GetHandLightPosition();
             float handDist = distance(vIn.localPos, handLightPos);
@@ -259,13 +254,18 @@ void main() {
         #endif
     #endif
 
+    #ifdef LIGHTING_COLORED
+        vec3 voxelPos = GetVoxelPosition(vIn.localPos);
+        float lpvFade = GetVoxelFade(voxelPos);
+    #endif
+
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         lmcoord = _pow3(lmcoord);
 
         const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
         vec3 blockLight = lmcoord.x * blockLightColor;
 
-        #if defined(LIGHTING_COLORED) && !defined(PHOTONICS_LIGHT_ENABLED)
+        #ifdef LIGHTING_COLORED
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, localTexNormal);
             vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
             blockLight = mix(blockLight, lpvSample, lpvFade);
@@ -299,7 +299,7 @@ void main() {
         vec3 lit = textureLod(lightmap, lmcoord, 0).rgb;
         lit = RGBToLinear(lit);
 
-        #if defined(LIGHTING_COLORED) && !defined(PHOTONICS_LIGHT_ENABLED)
+        #ifdef LIGHTING_COLORED
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, localTexNormal);
             vec3 lpvSample = SampleFloodFill(samplePos, pow(vIn.lmcoord.x, 2.2));
             lit += lpvFade * lpvSample;

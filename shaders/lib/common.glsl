@@ -56,6 +56,7 @@ const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 4
 #define PHOTONICS_REFLECT_STEPS 100 // [10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200]
 #define PHOTONICS_LIGHT_ENABLED
 #define PHOTONICS_LIGHT_STEPS 16 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32]
+//#define PHOTONICS_LIGHT_DEBUG
 
 //#define DEBUG
 //#define DEBUG_WHITEWORLD
@@ -81,14 +82,19 @@ const bool shadowHardwareFiltering = true;
 #ifndef PHOTONICS
     #undef PHOTONICS_REFLECT_ENABLED
     #undef PHOTONICS_LIGHT_ENABLED
+    #undef PHOTONICS_LIGHT_DEBUG
+#endif
+
+#ifndef PHOTONICS_LIGHT_ENABLED
+    #undef PHOTONICS_LIGHT_DEBUG
 #endif
 
 #ifdef BLOOM_ENABLED
 #endif
 
 
-#define _pow2(x) (x*x)
-#define _pow3(x) (x*x*x)
+#define _pow2(x) ((x)*(x))
+#define _pow3(x) ((x)*(x)*(x))
 #define _saturate(x) (clamp(x, 0.0, 1.0))
 
 float pow5(const in float value) {
