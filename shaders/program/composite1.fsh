@@ -233,8 +233,7 @@ void main() {
                     #else
                         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
-                        float sky_NoLM = dot(_pow2(hitLocalNormal), vec3(0.6, 0.25 * hitLocalNormal.y + 0.75, 0.8));
-                        lmcoord.y *= saturate(sky_NoLM);
+                        lmcoord.y *= GetOldLighting(hitLocalNormal);
 
                         lmcoord = LightMapTex(lmcoord);
                         vec3 lit = textureLod(texLightmap, lmcoord, 0).rgb;

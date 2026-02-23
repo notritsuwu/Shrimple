@@ -30,7 +30,8 @@ out VertexData {
         flat uint atlasTileSize;
     #endif
 
-    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+//    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+    #ifdef RENDER_TERRAIN
         flat int blockId;
     #endif
 } vOut;
@@ -106,7 +107,8 @@ void main() {
         vOut.tangentViewPos = viewPos.xyz * matViewTBN;
     #endif
 
-    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+//    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+    #ifdef RENDER_TERRAIN
         vOut.blockId = int(mc_Entity.x + EPSILON);
     #endif
 }

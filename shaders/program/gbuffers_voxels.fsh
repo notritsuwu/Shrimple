@@ -58,6 +58,8 @@ uniform int vxRenderDistance;
 
 #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
     #include "/lib/enhanced-lighting.glsl"
+#else
+    #include "/lib/vanilla-light.glsl"
 #endif
 
 #ifdef LIGHTING_COLORED
@@ -170,8 +172,7 @@ void main() {
     #else
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
-        float sky_NoLM = dot(localNormal * localNormal, vec3(0.6, 0.25 * localNormal.y + 0.75, 0.8));
-        lmcoord.y *= saturate(sky_NoLM);
+        lmcoord.y *= GetOldLighting(localNormal);
 
         #ifdef LIGHTING_COLORED
             lmcoord.x *= 1.0 - lpvFade;

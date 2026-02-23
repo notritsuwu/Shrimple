@@ -40,7 +40,7 @@ const float MATERIAL_EMISSION_SCALE = 16.0;
 #define LPV_FRUSTUM_OFFSET 0
 
 //#define SHADOWS_ENABLED
-const int shadowMapResolution = 1024; // [128 256 512 768 1024 1536 2048 3072 4096 6144 8192]
+#define SHADOW_RESOLUTION 1024 // [128 256 512 768 1024 1536 2048 3072 4096 6144 8192]
 const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 450 500 600 700 800 900 1000 1200 1400 1600 1800 2000 2200 2400 2600 2800 3000 3200 3400 3600 3800 4000]
 
 //#define BLOOM_ENABLED
@@ -77,6 +77,12 @@ const bool shadowHardwareFiltering = true;
     #define MATERIAL_PBR_ENABLED
 #else
     #undef MATERIAL_PARALLAX_ENABLED
+#endif
+
+#ifdef SHADOWS_ENABLED
+    const int shadowMapResolution = SHADOW_RESOLUTION;
+#else
+    const int shadowMapResolution = 2;
 #endif
 
 #ifndef PHOTONICS

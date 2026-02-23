@@ -25,7 +25,8 @@ in VertexData {
         flat uint atlasTileSize;
     #endif
 
-    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+//    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+    #ifdef RENDER_TERRAIN
         flat int blockId;
     #endif
 } vIn;
@@ -107,6 +108,8 @@ uniform int vxRenderDistance;
 
 #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
     #include "/lib/enhanced-lighting.glsl"
+#else
+    #include "/lib/vanilla-light.glsl"
 #endif
 
 #ifdef LIGHTING_COLORED
@@ -134,7 +137,10 @@ void main() {
 
     #ifdef MATERIAL_PARALLAX_ENABLED
         bool skipParallax = false;
-        if (vIn.blockId == BLOCK_LAVA || vIn.blockId == BLOCK_END_PORTAL) skipParallax = true;
+
+        #ifdef RENDER_TERRAIN
+            if (vIn.blockId == BLOCK_LAVA || vIn.blockId == BLOCK_WATER || vIn.blockId == BLOCK_END_PORTAL) skipParallax = true;
+        #endif
 
         float texDepth = 1.0;
         vec3 traceCoordDepth = vec3(1.0);
@@ -196,6 +202,16 @@ void main() {
         vec4 specularData = vec4(0.0, 0.04, 0.0, 0.0);
         vec3 localTexNormal = localGeoNormal;
         const float tex_occlusion = 1.0;
+
+        // TODO: if vanilla lighting, make foliage have "up" normals
+//        #if LIGHTING_MODE == LIGHTING_MODE_VANILLA
+        #ifdef RENDER_TERRAIN
+            bool isGrass = vIn.blockId == BLOCK_GRASS
+                || vIn.blockId == BLOCK_TALL_GRASS_LOWER
+                || vIn.blockId == BLOCK_TALL_GRASS_UPPER;
+
+            if (isGrass) localTexNormal = vec3(0,1,0);
+        #endif
     #endif
 
     vec3 albedo = RGBToLinear(color.rgb);
@@ -204,7 +220,7 @@ void main() {
         albedo = vec3(0.86);
     #endif
 
-    #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+    #if (defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)) && defined(RENDER_TERRAIN)
         if (vIn.blockId == BLOCK_WATER) {
             // TODO: add option to make clear?
 //            albedo = vec3(0.0);
@@ -288,8 +304,7 @@ void main() {
     #else
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
-        float sky_NoLM = dot(localTexNormal * localTexNormal, vec3(0.6, 0.25 * localTexNormal.y + 0.75, 0.8));
-        lmcoord.y *= saturate(sky_NoLM);
+        lmcoord.y *= GetOldLighting(localTexNormal);
 
         #ifdef LIGHTING_COLORED
             lmcoord.x *= 1.0 - lpvFade;
