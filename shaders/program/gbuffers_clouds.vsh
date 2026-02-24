@@ -3,8 +3,8 @@
 
 out VertexData {
     vec4 color;
-    vec2 texcoord;
     vec3 localPos;
+    vec3 localNormal;
 } vOut;
 
 uniform mat4 gbufferModelViewInverse;
@@ -15,8 +15,10 @@ uniform mat4 gbufferModelViewInverse;
 
 
 void main() {
-    vOut.texcoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
     vOut.color = gl_Color;
+
+    vec3 viewNormal = normalize(gl_NormalMatrix * gl_Normal);
+    vOut.localNormal = mat3(gbufferModelViewInverse) * viewNormal;
 
     vec3 viewPos = mul3(gl_ModelViewMatrix, gl_Vertex.xyz);
     vOut.localPos = mul3(gbufferModelViewInverse, viewPos);

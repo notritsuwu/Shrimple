@@ -37,10 +37,8 @@ void main() {
             color.rgb = outlineColor;
         #endif
 
-        const float emissionF = MATERIAL_EMISSION_SCALE * BLOCK_OUTLINE_EMISSION * 0.01;
-
         color.a = 1.0;
-        emission = emissionF;
+        emission = BLOCK_OUTLINE_EMISSION;
     }
     else {
         color *= texture(gtexture, vIn.texcoord);

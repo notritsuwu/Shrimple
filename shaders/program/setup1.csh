@@ -6,6 +6,7 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 const ivec3 workGroups = ivec3(32, 32, 1);
 
 layout(rgba8) uniform writeonly image2D imgBlockLight;
+layout(r16ui) uniform writeonly uimage2D imgBlockMask;
 
 #include "/lib/blocks.glsl"
 #include "/lib/items.glsl"
@@ -41,8 +42,17 @@ const vec3 color_CandleRed = vec3(219, 0, 0);
 const vec3 color_CandleYellow = vec3(255, 224, 0);
 
 
+//uint BuildLpvMask(const in uint north, const in uint east, const in uint south, const in uint west, const in uint up, const in uint down) {
+//    return east | (west << 1) | (down << 2) | (up << 3) | (south << 4) | (north << 5);
+//}
+
+#define MASK(N,E,S,W,U,D) (E | (W << 1) | (D << 2) | (U << 3) | (S << 4) | (N << 5))
+
 void main() {
     uint blockId = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * 256u;
+
+    float mixWeight = 0.0;
+    uint mixMask = 0u;
     vec3 color = vec3(0.0);
     float range = 0.0;
 
@@ -170,6 +180,22 @@ void main() {
             color = vec3(230, 128, 47);
             range = 8;
             break;
+        case BLOCK_DOOR_N:
+            mixMask = MASK(0, 1, 1, 1, 1, 1);
+            mixWeight = 1.0;
+            break;
+        case BLOCK_DOOR_E:
+            mixMask = MASK(1, 0, 1, 1, 1, 1);
+            mixWeight = 1.0;
+            break;
+        case BLOCK_DOOR_S:
+            mixMask = MASK(1, 1, 0, 1, 1, 1);
+            mixWeight = 1.0;
+            break;
+        case BLOCK_DOOR_W:
+            mixMask = MASK(1, 1, 1, 0, 1, 1);
+            mixWeight = 1.0;
+            break;
         case BLOCK_EYEBLOSSOM_OPEN:
             color = vec3(230, 128, 47);
             range = 2;
@@ -182,8 +208,8 @@ void main() {
             color = vec3(244, 237, 223);
             range = 14;
             break;
-        case BLOCK_CAMPFIRE_N_S:
-        case BLOCK_CAMPFIRE_W_E:
+        case BLOCK_CAMPFIRE_LIT_N_S:
+        case BLOCK_CAMPFIRE_LIT_W_E:
         case BLOCK_FIRE:
             color = color_Fire;
             range = 15;
@@ -369,6 +395,14 @@ void main() {
         case BLOCK_SHROOMLIGHT:
             color = vec3(216, 120, 52);
             range = 15;
+            break;
+        case BLOCK_SLAB_TOP:
+            mixMask = MASK(1, 1, 1, 1, 0, 1);
+            mixWeight = 0.5;
+            break;
+        case BLOCK_SLAB_BOTTOM:
+            mixMask = MASK(1, 1, 1, 1, 1, 0);
+            mixWeight = 0.5;
             break;
         case BLOCK_SMOKER_LIT_N:
         case BLOCK_SMOKER_LIT_E:
@@ -791,6 +825,12 @@ void main() {
             break;
     }
 
-    vec4 data = vec4(color / 255.0, range / 32.0);
-    imageStore(imgBlockLight, ivec2(gl_GlobalInvocationID.xy), data);
+    ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+
+    vec4 dataLight = vec4(color / 255.0, range / 32.0);
+    imageStore(imgBlockLight, uv, dataLight);
+
+    uint dataMask = packUnorm4x8(vec4(mixWeight, 0.0, 0.0, 0.0));
+    dataMask = bitfieldInsert(dataMask, mixMask, 8, 8);
+    imageStore(imgBlockMask, uv, uvec4(dataMask));
 }

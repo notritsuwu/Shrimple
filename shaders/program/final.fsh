@@ -12,17 +12,44 @@ uniform sampler2D TEX_FINAL;
 
 uniform vec2 viewSize;
 uniform int frameCounter;
+uniform float farPlane;
+uniform float far2;
+uniform float far3;
 
 #include "/lib/sampling/bayer.glsl"
 
-#ifdef PHOTONICS_LIGHT_DEBUG
+#if defined(DEBUG) || defined(PHOTONICS_LIGHT_DEBUG)
     #include "/lib/text.glsl"
+#endif
+
+#ifdef PHOTONICS_LIGHT_DEBUG
     #include "/photonics/photonics.glsl"
 #endif
 
 
 void main() {
     vec3 color = texelFetch(TEX_FINAL, ivec2(gl_FragCoord.xy), 0).rgb;
+
+    #ifdef DEBUG
+        beginText(ivec2(gl_FragCoord.xy * 0.5), ivec2(4, viewSize.y/2 - 24));
+
+        text.bgCol = vec4(0.0, 0.0, 0.0, 0.6);
+        text.fgCol = vec4(1.0, 1.0, 1.0, 1.0);
+
+        printString((_F, _a, _r, _colon, _space, _space));
+        printFloat(farPlane);
+        printLine();
+
+        printString((_F, _a, _r, _2, _colon, _space));
+        printFloat(far2);
+        printLine();
+
+        printString((_F, _a, _r, _3, _colon, _space));
+        printFloat(far3);
+        printLine();
+
+        endText(color);
+    #endif
 
     #ifdef PHOTONICS_LIGHT_DEBUG
         beginText(ivec2(gl_FragCoord.xy * 0.5), ivec2(4, viewSize.y/2 - 24));

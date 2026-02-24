@@ -1,20 +1,24 @@
+#define RENDER_FRAGMENT
+
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
 in VertexData {
+    vec4 color;
     vec2 lmcoord;
     vec3 localPos;
-    flat uint localNormal;
+    vec3 localNormal;
+
+    flat int materialId;
 } vIn;
 
 
-#if LIGHTING_MODE == LIGHTING_MODE_VANILLA
-    uniform sampler2D lightmap;
+#ifdef RENDER_TRANSLUCENT
+    uniform sampler2D depthtex0;
 #endif
 
-#ifdef LIGHTING_COLORED
-    uniform sampler3D texFloodFillA;
-    uniform sampler3D texFloodFillB;
+#if LIGHTING_MODE == LIGHTING_MODE_VANILLA
+    uniform sampler2D lightmap;
 #endif
 
 #ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
@@ -24,36 +28,33 @@ in VertexData {
 #endif
 
 uniform float far;
+uniform float nearPlane;
+uniform float farPlane;
 uniform vec3 fogColor;
-uniform float fogDensity;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
-uniform vec4 entityColor;
-uniform float alphaTestRef;
 uniform vec3 sunPosition;
 uniform vec3 shadowLightPosition;
 uniform mat4 gbufferModelView;
-uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
 uniform vec3 cameraPosition;
-uniform int frameCounter;
 uniform int isEyeInWater;
-uniform ivec2 atlasSize;
-uniform vec2 viewSize;
 
-uniform int vxRenderDistance;
+uniform float dhNearPlane;
 uniform float dhFarPlane;
 
 #include "/lib/oklab.glsl"
 #include "/lib/hsv.glsl"
 #include "/lib/fog.glsl"
-#include "/lib/octohedral.glsl"
+#include "/lib/sampling/depth.glsl"
 #include "/lib/sampling/lightmap.glsl"
+#include "/lib/dh-noise.glsl"
 
 #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
+    #include "/lib/octohedral.glsl"
     #include "/lib/fresnel.glsl"
     #include "/lib/material.glsl"
 #endif
@@ -64,65 +65,66 @@ uniform float dhFarPlane;
     #include "/lib/vanilla-light.glsl"
 #endif
 
-#ifdef LIGHTING_COLORED
-    #include "/lib/voxel.glsl"
-    #include "/lib/floodfill-render.glsl"
-#endif
-
 #ifdef SHADOWS_ENABLED
     #include "/lib/shadows.glsl"
 #endif
-
-#include "/photonics/photonics.glsl"
 
 
 #include "_output.glsl"
 
 void main() {
-    vec3 rayOrigin = vIn.localPos + (cameraPosition - world_offset);
+    vec3 localNormal = normalize(vIn.localNormal);
+    float viewDist = length(vIn.localPos);
+    vec3 localViewDir = vIn.localPos / viewDist;
 
-    vec3 localNormal = OctDecode(unpackUnorm2x16(vIn.localNormal));
+    #ifdef RENDER_TRANSLUCENT
+        float depth = texelFetch(depthtex0, ivec2(gl_FragCoord.xy), 0).r;
+        float depthL = linearizeDepth(depth * 2.0 - 1.0, nearPlane, farPlane);
+        float depthDhL = linearizeDepth(gl_FragCoord.z * 2.0 - 1.0, dhNearPlane, dhFarPlane);
+        if (depthL < depthDhL && depth < 1.0) {discard; return;}
+//        vec3 viewPos = mul3(gbufferModelView, vIn.localPos);
+//        if (depthL < -viewPos.z && depth < 1.0) {discard; return;}
+    #endif
 
-    // avoid view bobbing
-    vec3 viewPos = mul3(gbufferModelView, vIn.localPos);
-    vec3 localViewDir = mat3(gbufferModelViewInverse) * normalize(viewPos);
+    if (viewDist < dh_clipDistF * far) {
+        discard;
+        return;
+    }
 
-    RayJob ray = RayJob(
-        rayOrigin - 0.01 * localNormal,
-        localViewDir,
-        vec3(0), vec3(0), vec3(0), false
-    );
+    vec4 color = vIn.color;
 
-    ray_constraint = ivec3(ray.origin);
-    trace_ray(ray);
-
-    if (!ray.result_hit) discard;
-    if (ray.result_normal != vec3(0.0))
-        localNormal = ray.result_normal;
-
-    vec3 hitLocalPos = ray.result_position - (cameraPosition - world_offset);
-    vec3 hitViewPos = mul3(gbufferModelView, hitLocalPos);
-
-    float hitViewDepth = -hitViewPos.z;
-    gl_FragDepth = 0.5 * (-gbufferProjection[2].z*hitViewDepth + gbufferProjection[3].z) / hitViewDepth + 0.5;
-
-    vec4 color = vec4(ray.result_color, 1.0);
-
-
-    float viewDist = length(hitLocalPos);
+    float smoothness = 0.0;
+    float emission = 0.0;
+    float f0 = 0.04;
 
     vec3 albedo = RGBToLinear(color.rgb);
-    vec4 specularData = vec4(0.0, 0.04, 0.0, 0.0);
+
+    #ifndef RENDER_TRANSLUCENT
+        vec3 worldPos = vIn.localPos + cameraPosition;
+        applyNoise(albedo, 1.0, worldPos, viewDist);
+    #endif
 
     #ifdef DEBUG_WHITEWORLD
         albedo = vec3(0.86);
+    #endif
+
+    #if (defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)) //&& defined(RENDER_TRANSLUCENT)
+        if (vIn.materialId == DH_BLOCK_WATER) {
+            // TODO: add option to make clear?
+            // albedo = vec3(0.0);
+            smoothness = 0.98;
+            f0 = 0.02;
+        }
+
+        if (vIn.materialId == DH_BLOCK_LAVA) emission = 0.76;
+        if (vIn.materialId == DH_BLOCK_ILLUMINATED) emission = 0.92;
     #endif
 
     vec3 localSkyLightDir = normalize(mat3(gbufferModelViewInverse) * shadowLightPosition);
 
     float shadow = 1.0;
     #ifdef SHADOWS_ENABLED
-        vec3 shadowPos = hitLocalPos;
+        vec3 shadowPos = vIn.localPos;
         shadowPos += 0.08 * localNormal;
         shadowPos = mul3(shadowModelView, shadowPos);
         shadowPos.z += 0.032 * viewDist;
@@ -142,23 +144,13 @@ void main() {
         shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
 
-    #ifdef LIGHTING_COLORED
-        vec3 voxelPos = GetVoxelPosition(hitLocalPos);
-        float lpvFade = GetVoxelFade(voxelPos);
-    #endif
-
     vec2 lmcoord = vIn.lmcoord;
+
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         lmcoord = _pow3(lmcoord);
 
         const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
         vec3 blockLight = lmcoord.x * blockLightColor;
-
-        #ifdef LIGHTING_COLORED
-            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
-            vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
-            blockLight = mix(blockLight, lpvSample, lpvFade);
-        #endif
 
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
         vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
@@ -167,40 +159,28 @@ void main() {
         vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
-
-//        #ifdef RENDER_TERRAIN
-//            color.rgb *= _pow2(vIn.color.a);
-//        #endif
     #else
         lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
 
         lmcoord.y *= GetOldLighting(localNormal);
 
-        #ifdef LIGHTING_COLORED
-            lmcoord.x *= 1.0 - lpvFade;
-        #endif
-
         lmcoord = LightMapTex(lmcoord);
         vec3 lit = textureLod(lightmap, lmcoord, 0).rgb;
         lit = RGBToLinear(lit);
-
-        #ifdef LIGHTING_COLORED
-            vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
-            vec3 lpvSample = SampleFloodFill(samplePos, pow(vIn.lmcoord.x, 2.2));
-            lit += lpvFade * lpvSample;
-        #endif
 
         color.rgb = albedo * lit;
     #endif
 
     #ifdef LIGHTING_REFLECT_ENABLED
-        float smoothness = 1.0 - mat_roughness_lab(specularData.r);
-        float f0 = mat_f0_lab(specularData.g);
-
         float NoV = dot(localNormal, -localViewDir);
         color.rgb *= 1.0 - F_schlick(NoV, f0, 1.0) * _pow2(smoothness);
     #endif
 
+    #ifdef MATERIAL_PBR_ENABLED
+        //float emission = mat_emission(specularData);
+        TransformEmission(emission);
+        color.rgb += albedo * emission;
+    #endif
 
     float borderFogF = GetBorderFogStrength(viewDist);
     float envFogF = smoothstep(fogStart, fogEnd, viewDist);
@@ -212,18 +192,19 @@ void main() {
 
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
-//    color.rgb = lpvSample;
-
-
     outFinal = color;
 
-    #ifdef LIGHTING_REFLECT_ENABLED
+    #ifdef PHOTONICS_LIGHT_ENABLED
+        outGeoNormal = packUnorm2x16(OctEncode(localNormal));
+    #endif
+
+    #if defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
         vec3 viewNormal = mat3(gbufferModelView) * localNormal;
 
         outTexNormal = packUnorm2x16(OctEncode(viewNormal));
 
         outReflectSpecular = uvec2(
-            packUnorm4x8(vec4(LinearToRGB(albedo.rgb), vIn.lmcoord.y)),
-            packUnorm4x8(specularData));
+            packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord.y)),
+            packUnorm4x8(vec4(smoothness, f0, 0.0, emission)));
     #endif
 }

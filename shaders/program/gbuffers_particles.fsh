@@ -49,6 +49,7 @@ uniform int isEyeInWater;
 
 uniform int textureFilteringMode;
 uniform int vxRenderDistance;
+uniform float dhFarPlane;
 
 #include "/lib/oklab.glsl"
 #include "/lib/hsv.glsl"
@@ -141,7 +142,8 @@ void main() {
         #ifdef LIGHTING_COLORED
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, vec3(0.0));
             vec3 lpvSample = SampleFloodFill(samplePos) * 3.0;
-            blockLight = mix(blockLight, lpvSample, lpvFade);
+//            blockLight = mix(blockLight, lpvSample, lpvFade);
+            blockLight += lpvSample * lpvFade;
         #endif
 
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
@@ -180,6 +182,11 @@ void main() {
 
     #ifdef MATERIAL_PBR_ENABLED
         float emission = mat_emission(specularData);
+        TransformEmission(emission);
+
+//        if (all(greaterThan(vIn.lmcoord, vec2(0.99)))) emission = 40.0;
+//        if (vIn.lmcoord.x > 0.99 && vIn.lmcoord.y > 0.99) emission = 40.0;
+
         color.rgb += albedo * emission;
     #endif
 

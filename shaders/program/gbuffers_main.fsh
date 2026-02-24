@@ -54,7 +54,7 @@ uniform sampler2D gtexture;
     uniform sampler3D texFloodFillB;
 #endif
 
-#if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED) && !defined(PHOTONICS_LIGHT_ENABLED)
+#if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED) && !defined(PHOTONICS_HAND_LIGHT_ENABLED)
     uniform sampler2D texBlockLight;
 #endif
 
@@ -86,6 +86,7 @@ uniform vec2 viewSize;
 
 uniform int textureFilteringMode;
 uniform int vxRenderDistance;
+uniform float dhFarPlane;
 
 #include "/lib/blocks.glsl"
 #include "/lib/oklab.glsl"
@@ -129,10 +130,18 @@ uniform int vxRenderDistance;
 #include "_output.glsl"
 
 void main() {
+    float viewDist = length(vIn.localPos);
+
+    #if defined(RENDER_TRANSLUCENT) && defined(DISTANT_HORIZONS)
+        if (viewDist > dh_clipDistF * far) {
+            discard;
+            return;
+        }
+    #endif
+
     vec2 texcoord = vIn.texcoord;
 	float mip = textureQueryLod(gtexture, texcoord).y;
     vec3 localGeoNormal = normalize(vIn.localNormal);
-    float viewDist = length(vIn.localPos);
     vec3 localViewDir = vIn.localPos / viewDist;
 
     #ifdef MATERIAL_PARALLAX_ENABLED
@@ -254,9 +263,11 @@ void main() {
 
     vec2 lmcoord = vIn.lmcoord;
 
-    #ifdef PHOTONICS_LIGHT_ENABLED
+    #ifdef PHOTONICS_BLOCK_LIGHT_ENABLED
         lmcoord.x = 0.0;
-    #else
+    #endif
+
+    #ifndef PHOTONICS_HAND_LIGHT_ENABLED
         #ifdef LIGHTING_HAND
             vec3 handLightPos = GetHandLightPosition();
             float handDist = distance(vIn.localPos, handLightPos);
@@ -324,7 +335,7 @@ void main() {
         color.rgb *= tex_occlusion;
     #endif
 
-    #if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED) && !defined(PHOTONICS_LIGHT_ENABLED)
+    #if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED) && !defined(PHOTONICS_HAND_LIGHT_ENABLED)
         float handLight1 = max(heldBlockLightValue  - handDist, 0.0) / 15.0;
         float handLight2 = max(heldBlockLightValue2 - handDist, 0.0) / 15.0;
 
@@ -368,6 +379,7 @@ void main() {
 
     #ifdef MATERIAL_PBR_ENABLED
         float emission = mat_emission(specularData);
+        TransformEmission(emission);
         color.rgb += albedo * emission;
     #endif
 

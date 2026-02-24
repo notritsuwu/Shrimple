@@ -25,6 +25,7 @@ layout(rgba8) uniform image3D imgFloodFillB;
 
 uniform usampler3D texVoxels;
 uniform sampler2D texBlockLight;
+uniform usampler2D texBlockMask;
 
 uniform int frameCounter;
 uniform vec3 cameraPosition;
@@ -39,7 +40,7 @@ uniform mat4 gbufferPreviousModelView;
 
 
 bool IsLightBlock(const in uint blockId) {
-    #ifdef PHOTONICS_LIGHT_ENABLED
+    #ifdef PHOTONICS_BLOCK_LIGHT_ENABLED
         return blockId == BLOCK_LAVA
             || blockId == BLOCK_CAVEVINE_BERRIES;
     #else
@@ -79,10 +80,16 @@ vec3 sampleShared(const in ivec3 pos, const in int mask_index, out float weight)
     //float mixWeight = 1.0;
     uint mixMask = 0xFFFF;
     uint blockId = voxelSharedData[shared_index];
-    weight = blockId == 0 ? 1.0 : 0.0;
+    weight = 1.0;
 
 //    if (blockId > 0 && blockId != 0u)
 //        ParseBlockLpvData(StaticBlockMap[blockId].lpv_data, mixMask, weight);
+    if (blockId > 0u && blockId < 65000u) {
+        ivec2 blockMaskUV = ivec2(blockId % 256, blockId / 256);
+        uint maskData = texelFetch(texBlockMask, blockMaskUV, 0).r;
+//        mixWeight = unpackUnorm4x8(maskData).r;
+//        mixMask = bitfieldExtract(maskData, 8, 8);
+    }
 
     uint wMask = bitfieldExtract(mixMask, mask_index, 1);
     return lpvBuffer[shared_index] * wMask;// * mixWeight;
@@ -127,25 +134,19 @@ void PopulateShared() {
     ivec3 pos2 = workGroupOffset + ivec3(i2 / lpvFlatten) % 10;
 
     ivec3 lpvPos1 = imgCoordOffset + pos1;
-    ivec3 lpvPos2 = imgCoordOffset + pos2;
-
     lpvBuffer[i1] = GetLpvValue(lpvPos1);
+
+    ivec3 lpvPos2 = imgCoordOffset + pos2;
     lpvBuffer[i2] = GetLpvValue(lpvPos2);
 
     uint blockId1 = 0u;
-    uint blockId2 = 0u;
-
-    if (IsInVoxelBounds(pos1)) {
-//        blockId1 = imageLoad(imgVoxels, pos1).r;
+    if (IsInVoxelBounds(pos1))
         blockId1 = texelFetch(texVoxels, pos1, 0).r;
-    }
-
-    if (IsInVoxelBounds(pos2)) {
-//        blockId2 = imageLoad(imgVoxels, pos2).r;
-        blockId2 = texelFetch(texVoxels, pos2, 0).r;
-    }
-
     voxelSharedData[i1] = blockId1;
+
+    uint blockId2 = 0u;
+    if (IsInVoxelBounds(pos2))
+        blockId2 = texelFetch(texVoxels, pos2, 0).r;
     voxelSharedData[i2] = blockId2;
 }
 
@@ -168,13 +169,20 @@ void main() {
 
     vec3 lightValue = vec3(0.0);
 
-    float mixWeight = blockId == 0u ? 1.0 : 0.0;
+//    float mixWeight = blockId == 0u ? 1.0 : 0.0;
+    float mixWeight = 1.0;
     uint mixMask = 0xFFFF;
     vec3 tint = vec3(1.0);
 
     // TODO: which is it?
 //    if (blockId > 0u && blockId != 0u)
 //        ParseBlockLpvData(StaticBlockMap[blockId].lpv_data, mixMask, mixWeight);
+    if (blockId > 0u && blockId < 65000u) {
+        ivec2 blockMaskUV = ivec2(blockId % 256, blockId / 256);
+        uint maskData = texelFetch(texBlockMask, blockMaskUV, 0).r;
+//        mixWeight = unpackUnorm4x8(maskData).r;
+        mixMask = bitfieldExtract(maskData, 8, 8);
+    }
 
     vec3 lightColor = vec3(0.0);
     float lightRange = 0.0;
@@ -188,7 +196,7 @@ void main() {
 
     if (blockId >= BLOCK_HONEY && blockId <= BLOCK_TINTED_GLASS) {
         tint = lightColor;//GetLightGlassTint(blockId);
-        mixWeight = 1.0;
+//        mixWeight = 1.0;
     }
 
     if (mixWeight > EPSILON) {

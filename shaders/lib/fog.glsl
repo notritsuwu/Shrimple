@@ -23,7 +23,9 @@ vec3 GetSkyFogColor(const in vec3 skyColor, const in vec3 fogColor, const in flo
 
 float GetBorderFogStrength(const in float viewDist) {
     #ifdef VOXY
-        #define _far (vxRenderDistance * 16.0)
+        float _far = vxRenderDistance * 16.0;
+    #elif defined(DISTANT_HORIZONS)
+        float _far = 0.5 * dhFarPlane;
     #else
         #define _far far
     #endif

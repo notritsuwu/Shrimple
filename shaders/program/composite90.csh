@@ -22,7 +22,7 @@ void main() {
 
         float lum = luminance(color);
 //            float tgt = lum * (lum/wp + 1.0) / (lum + 1.0);
-        float tgt = lum / (lum + 0.5);
+        float tgt = lum / (lum + 0.75);
         color *= tgt / lum;
     #endif
 

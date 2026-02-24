@@ -99,13 +99,22 @@ float mat_emission_old(const in float specular_b) {
 
 float mat_emission(const in vec4 specularData) {
     #if MATERIAL_FORMAT == MAT_LABPBR
-        float emission = mat_emission_lab(specularData.a);
+        return mat_emission_lab(specularData.a);
     #elif MATERIAL_FORMAT == MAT_OLDPBR
-        float emission = mat_emission_old(specularData.b);
+        return mat_emission_old(specularData.b);
     #else
-        const float emission = 0.0;
         return 0.0;
     #endif
+}
 
-    return pow(emission, MATERIAL_EMISSION_POWER) * MATERIAL_EMISSION_SCALE;
+void TransformEmission(inout float emission) {
+    const float MAT_EmissionScale = MATERIAL_EMISSION_SCALE;
+
+    #if MATERIAL_EMISSION_POWER != 100
+        const float MAT_EmissionPower = MATERIAL_EMISSION_POWER * 0.01;
+
+        emission = pow(emission, MAT_EmissionPower) * MAT_EmissionScale;
+    #else
+        emission *= MAT_EmissionScale;
+    #endif
 }

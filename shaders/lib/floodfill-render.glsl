@@ -17,18 +17,22 @@ vec3 GetFloodFillSamplePos(const in vec3 voxelPos, const in vec3 geoNormal) {
     return geoNormal * 0.5 + voxelPos;
 }
 
-vec3 _SampleFloodFill(const in vec3 lpvPos) {
+vec3 _SampleFloodFill(const in vec3 lpvPos, const in int frame) {
     vec3 texcoord = lpvPos / VoxelBufferSize;
 
-    vec3 lpvSample = (frameCounter % 2) == 0
+    vec3 lpvSample = (frame % 2) == 0
         ? textureLod(texFloodFillA, texcoord, 0).rgb
         : textureLod(texFloodFillB, texcoord, 0).rgb;
+
+//    vec3 lpvSample = (frame % 2) == 0
+//        ? texelFetch(texFloodFillA, ivec3(floor(lpvPos)), 0).rgb
+//        : texelFetch(texFloodFillB, ivec3(floor(lpvPos)), 0).rgb;
 
     return RGBToLinear(lpvSample);
 }
 
 vec3 SampleFloodFill(const in vec3 lpvPos) {
-    vec3 lpvSample = _SampleFloodFill(lpvPos);
+    vec3 lpvSample = _SampleFloodFill(lpvPos, frameCounter);
     return lpvSample;
 
 //    vec3 hsv = RgbToHsv(lpvSample);
@@ -40,7 +44,7 @@ vec3 SampleFloodFill(const in vec3 lpvPos) {
 }
 
 vec3 SampleFloodFill(const in vec3 lpvPos, const in float brightness) {
-    vec3 lpvSample = _SampleFloodFill(lpvPos);
+    vec3 lpvSample = _SampleFloodFill(lpvPos, frameCounter);
 
     vec3 hsv = RgbToHsv(lpvSample);
     hsv.z = brightness;

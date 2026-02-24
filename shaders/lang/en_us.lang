@@ -68,6 +68,15 @@ suffix.MATERIAL_PARALLAX_DEPTH=%
 option.MATERIAL_PARALLAX_SAMPLES=Sample Count
 
 
+screen.MATERIAL_EMISSION=Emission
+
+option.MATERIAL_EMISSION_SCALE=Scale
+suffix.MATERIAL_EMISSION_SCALE=x
+
+option.MATERIAL_EMISSION_POWER=Curve
+suffix.MATERIAL_EMISSION_POWER=%
+
+
 screen.LIGHTING=Lighting
 
 option.LIGHTING_MODE=Mode
@@ -90,7 +99,7 @@ option.SHADOWS_ENABLED=Enabled
 
 option.sunPathRotation=Rotation
 
-option.shadowMapResolution=Resolution
+option.SHADOW_RESOLUTION=Resolution
 
 option.shadowDistance=Distance
 suffix.shadowDistance=m
@@ -122,5 +131,11 @@ screen.MODS=Mods
 screen.MOD_PHOTONICS=Photonics
 
 option.PHOTONICS_REFLECT_ENABLED=Reflections
+option.PHOTONICS_REFLECT_ENABLED.comment=Replaces screen-space reflections with world-space reflections using Photonics ray-tracing.
 
-option.PHOTONICS_LIGHT_ENABLED=Lighting
+option.PHOTONICS_BLOCK_TINT_ENABLED=Tinting
+option.PHOTONICS_BLOCK_TINT_ENABLED.comment=Allows traced lighting & reflections to be tinted from translucent blocks, like stained glass.
+
+option.PHOTONICS_HAND_LIGHT_ENABLED=Hand Light
+
+option.PHOTONICS_BLOCK_LIGHT_ENABLED=Block Light

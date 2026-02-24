@@ -10,7 +10,9 @@ uniform vec3 skyColor;
 uniform vec3 fogColor;
 uniform int renderStage;
 uniform int isEyeInWater;
+
 uniform int vxRenderDistance;
+uniform float dhFarPlane;
 
 #include "/lib/oklab.glsl"
 #include "/lib/fog.glsl"

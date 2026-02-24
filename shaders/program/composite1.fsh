@@ -44,11 +44,11 @@ uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
-uniform int vxRenderDistance;
 uniform int frameCounter;
-
 uniform vec2 taa_offset = vec2(0.0);
 
+uniform int vxRenderDistance;
+uniform float dhFarPlane;
 
 #include "/lib/hsv.glsl"
 #include "/lib/oklab.glsl"
@@ -69,6 +69,8 @@ uniform vec2 taa_offset = vec2(0.0);
 
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         #include "/lib/enhanced-lighting.glsl"
+    #else
+        #include "/lib/vanilla-light.glsl"
     #endif
 
     #ifdef LIGHTING_COLORED
