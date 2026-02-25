@@ -6,16 +6,12 @@ layout (local_size_x = 16, local_size_y = 16) in;
 const vec2 workGroupsRender = vec2(1.0, 1.0);
 
 
-const float TAA_RejectionStrength = 0.1;
-const int TAA_MaxAccumFrames = 8;
-
-layout(rgba16f) uniform image2D IMG_FINAL;
-layout(rgba16f) uniform image2D imgFinalPrev;
-
 shared vec3 sharedBuffer[18*18];
 
+layout(rgba16f) uniform writeonly image2D imgTAA;
+
 uniform sampler2D TEX_FINAL;
-uniform sampler2D texFinalPrev;
+uniform sampler2D texTAA_prev;
 uniform sampler2D depthtex0;
 
 uniform mat4 gbufferProjectionInverse;
@@ -26,36 +22,37 @@ uniform mat4 gbufferPreviousProjection;
 uniform vec3 previousCameraPosition;
 uniform vec2 viewSize;
 
+const float TAA_RejectionStrength = 0.1;
+const int TAA_MaxAccumFrames = 8;
 
-uvec2 getSharedUV(const in uint z) {
-    return uvec2(z % 18, z / 18);
-}
 
 int getSharedIndex(const in ivec2 uv) {
     return uv.y * 18 + uv.x;
 }
 
+void copyToShared(const in ivec2 uv_base, const in uint i_shared) {
+    if (i_shared >= (18*18)) return;
+
+    ivec2 uv_i = ivec2(i_shared % 18, i_shared / 18);
+    vec3 color = texelFetch(TEX_FINAL, uv_base + uv_i, 0).rgb;
+    sharedBuffer[i_shared] = color;
+}
+
 
 void main() {
     uint i_base = gl_LocalInvocationIndex * 2u;
+    ivec2 uv_base = ivec2(gl_WorkGroupID.xy) * 16 - 1;
 
-    if (i_base < (18*18)) {
-        uvec2 uv_base = gl_WorkGroupID.xy * 16u - 1u;
+    copyToShared(uv_base, i_base + 0);
+    copyToShared(uv_base, i_base + 1);
 
-        for (uint i = 0u; i < 2u; i++) {
-            uint i_shared = i_base + i;
-
-            if (i_shared < (18*18)) {
-                uvec2 uv_i = getSharedUV(i_shared);
-                sharedBuffer[i_shared] = texelFetch(TEX_FINAL, ivec2(uv_base + uv_i), 0).rgb;
-            }
-        }
-    }
-
+    memoryBarrierShared();
     barrier();
 
-    if (all(lessThan(gl_GlobalInvocationID.xy, viewSize))) {
-        vec2 texcoord = (gl_GlobalInvocationID.xy + 0.5) / viewSize;
+    ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+
+    if (all(lessThan(uv, viewSize))) {
+        vec2 texcoord = (uv + 0.5) / viewSize;
         float depthNow = textureLod(depthtex0, texcoord, 0).r;
         vec3 clipPos = vec3(texcoord, depthNow) * 2.0 - 1.0;
 
@@ -74,26 +71,26 @@ void main() {
 
 
         #ifdef TAA_SHARPEN_HISTORY
-            vec4 lastColor = sample_CatmullRom_RGBA(texFinalPrev, uv_prev, viewSize);
+            vec4 lastColor = sample_CatmullRom_RGBA(texTAA_prev, uv_prev, viewSize);
         #else
-            vec4 lastColor = textureLod(texFinalPrev, uv_prev, 0);
+            vec4 lastColor = textureLod(texTAA_prev, uv_prev, 0);
         #endif
 
         float mixRate = TAA_MaxAccumFrames;//clamp(lastColor.a, 0.0, TAA_MaxAccumFrames);
 
         if (saturate(uv_prev) != uv_prev) mixRate = 0.0;
 
-        ivec2 uv = ivec2(gl_LocalInvocationID.xy) + 1;
+        ivec2 luv = ivec2(gl_LocalInvocationID.xy) + 1;
 
-        vec3 in0 = sharedBuffer[getSharedIndex(uv)];
-        vec3 in1 = sharedBuffer[getSharedIndex(uv + ivec2(+1,  0))];
-        vec3 in2 = sharedBuffer[getSharedIndex(uv + ivec2(-1,  0))];
-        vec3 in3 = sharedBuffer[getSharedIndex(uv + ivec2( 0, +1))];
-        vec3 in4 = sharedBuffer[getSharedIndex(uv + ivec2( 0, -1))];
-        vec3 in5 = sharedBuffer[getSharedIndex(uv + ivec2(+1, +1))];
-        vec3 in6 = sharedBuffer[getSharedIndex(uv + ivec2(-1, +1))];
-        vec3 in7 = sharedBuffer[getSharedIndex(uv + ivec2(+1, -1))];
-        vec3 in8 = sharedBuffer[getSharedIndex(uv + ivec2(-1, -1))];
+        vec3 in0 = sharedBuffer[getSharedIndex(luv)];
+        vec3 in1 = sharedBuffer[getSharedIndex(luv + ivec2(+1,  0))];
+        vec3 in2 = sharedBuffer[getSharedIndex(luv + ivec2(-1,  0))];
+        vec3 in3 = sharedBuffer[getSharedIndex(luv + ivec2( 0, +1))];
+        vec3 in4 = sharedBuffer[getSharedIndex(luv + ivec2( 0, -1))];
+        vec3 in5 = sharedBuffer[getSharedIndex(luv + ivec2(+1, +1))];
+        vec3 in6 = sharedBuffer[getSharedIndex(luv + ivec2(-1, +1))];
+        vec3 in7 = sharedBuffer[getSharedIndex(luv + ivec2(+1, -1))];
+        vec3 in8 = sharedBuffer[getSharedIndex(luv + ivec2(-1, -1))];
 
         vec3 antialiased = mix(lastColor.rgb, in0, 1.0 / (mixRate + 1.0));
 
@@ -107,7 +104,6 @@ void main() {
 //        vec3 diff = clamped - antialiased;
 //        mixRate *= 1.0 / (dot(diff, diff) * TAA_RejectionStrength + 1.0);
 
-        imageStore(IMG_FINAL, ivec2(gl_GlobalInvocationID.xy), vec4(clamped, 1.0));
-        imageStore(imgFinalPrev, ivec2(gl_GlobalInvocationID.xy), vec4(clamped, (mixRate + 1.0)));
+        imageStore(imgTAA, uv, vec4(clamped, mixRate + 1.0));
     }
 }

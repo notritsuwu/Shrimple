@@ -115,7 +115,7 @@ vec3 sample_indirect_lighting(const in vec3 localPos, const in vec3 localNormal)
             vec3 hitLocalPos = ray.result_position - (cameraPosition - world_offset);
             vec3 voxelPos = GetVoxelPosition(hitLocalPos);
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
-            lighting += SampleFloodFill(samplePos) * 3.0;
+            lighting += SampleFloodFill(samplePos); // * 3.0;
         #endif
 
         vec3 localSkyLightDir = normalize(mul3(gbufferModelViewInverse, shadowLightPosition));

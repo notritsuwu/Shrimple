@@ -4,10 +4,10 @@
     layout(location = 2) out uvec2 outReflectSpecular;
 
     #ifdef PHOTONICS_LIGHT_ENABLED
-        /* RENDERTARGETS: 0,1,2,3 */
+        /* RENDERTARGETS: 0,2,3,4 */
         layout(location = 3) out uint outGeoNormal;
     #else
-        /* RENDERTARGETS: 0,1,2 */
+        /* RENDERTARGETS: 0,2,3 */
     #endif
 #else
     /* RENDERTARGETS: 0 */

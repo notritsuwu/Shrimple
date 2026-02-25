@@ -21,9 +21,9 @@
 
 #define TEX_FINAL colortex0
 #define IMG_FINAL colorimg0
-#define TEX_TEX_NORMAL colortex1
-#define TEX_REFLECT_SPECULAR colortex2
-#define TEX_GEO_NORMAL colortex3
+#define TEX_TEX_NORMAL colortex2
+#define TEX_REFLECT_SPECULAR colortex3
+#define TEX_GEO_NORMAL colortex4
 #define TEX_BLOOM_TILES colortex5
 #define TEX_GI_COLOR colortex6
 #define TEX_GI_POSITION colortex7

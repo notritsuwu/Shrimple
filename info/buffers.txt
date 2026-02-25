@@ -1,8 +1,8 @@
 ### COLORTEX
 colortex0		    RGB16F		1.0		final
-colortex1		    R32UI		1.0		reflection normal
-colortex2		    RG32UI		1.0		reflection albedo, specular
-colortex3		    R32UI		1.0		photonics geo normal
+colortex2		    R32UI		1.0		reflection normal
+colortex3		    RG32UI		1.0		reflection albedo, specular
+colortex4		    R32UI		1.0		photonics geo normal
 colortex5		    RGBA16F		1.0		bloom tiles
 
 colortex6		    RGBA16F		1.0		GI color
@@ -14,7 +14,8 @@ imgVoxels           R16UI       *3D     voxel buffer
 imgBlockLight       RGBA8       256^2   static block light color-range data
 imgFloodFillA       RGBA8       *3D     floodfill main
 imgFloodFillB       RGBA8       *3D     floodfill alt
-imgFinalPrev        RGBA16F     1.0     previous final output
+imgTAA              RGBA16F     1.0     TAA
+imgTAA_prev         RGBA16F     1.0     TAA history
 
 
 ### CUSTOM TEXTURES
