@@ -52,84 +52,114 @@ void main() {
     uint blockId = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * 256u;
 
     float mixWeight = 0.0;
-    uint mixMask = 0u;
+    uint mixMask = 0xFFFF;
     vec3 color = vec3(0.0);
     float range = 0.0;
 
+
+    // foliage
+    if (blockId >= 100 && blockId < 200) mixWeight = 1.0;
+
+    // IGNORED
+    if (blockId > 900 && blockId < 1000) mixWeight = 1.0;
+
+    if (blockId == BLOCK_CARPET) mixWeight = 1.0;
+    if (blockId >= BLOCK_FENCE_POST && blockId <= BLOCK_FENCE_GATE_CLOSED_W_E) mixWeight = 1.0;
+
+
     switch (blockId) {
         case BLOCK_LIGHT_1:
+            mixWeight = 1.0;
             color = color_White;
             range = 1;
             break;
         case BLOCK_LIGHT_2:
+            mixWeight = 1.0;
             color = color_White;
             range = 2;
             break;
         case BLOCK_LIGHT_3:
+            mixWeight = 1.0;
             color = color_White;
             range = 3;
             break;
         case BLOCK_LIGHT_4:
+            mixWeight = 1.0;
             color = color_White;
             range = 4;
             break;
         case BLOCK_LIGHT_5:
+            mixWeight = 1.0;
             color = color_White;
             range = 5;
             break;
         case BLOCK_LIGHT_6:
+            mixWeight = 1.0;
             color = color_White;
             range = 6;
             break;
         case BLOCK_LIGHT_7:
+            mixWeight = 1.0;
             color = color_White;
             range = 7;
             break;
         case BLOCK_LIGHT_8:
+            mixWeight = 1.0;
             color = color_White;
             range = 8;
             break;
         case BLOCK_LIGHT_9:
+            mixWeight = 1.0;
             color = color_White;
             range = 9;
             break;
         case BLOCK_LIGHT_10:
+            mixWeight = 1.0;
             color = color_White;
             range = 10;
             break;
         case BLOCK_LIGHT_11:
+            mixWeight = 1.0;
             color = color_White;
             range = 11;
             break;
         case BLOCK_LIGHT_12:
+            mixWeight = 1.0;
             color = color_White;
             range = 12;
             break;
         case BLOCK_LIGHT_13:
+            mixWeight = 1.0;
             color = color_White;
             range = 13;
             break;
         case BLOCK_LIGHT_14:
+            mixWeight = 1.0;
             color = color_White;
             range = 14;
             break;
         case BLOCK_LIGHT_15:
+            mixWeight = 1.0;
             color = color_White;
             range = 15;
             break;
         case BLOCK_AMETHYST_BUD_LARGE:
+            mixWeight = 0.7;
             color = color_Amethyst;
             range = 4;
             break;
         case BLOCK_AMETHYST_BUD_MEDIUM:
+            mixWeight = 0.8;
             color = color_Amethyst;
             range = 2;
             break;
         case BLOCK_AMETHYST_CLUSTER:
+            mixWeight = 0.6;
             color = color_Amethyst;
             range = 5;
             break;
         case BLOCK_BEACON:
+            mixWeight = 0.4;
             color = color_White;
             range = 15;
             break;
@@ -141,6 +171,7 @@ void main() {
             range = 6;
             break;
         case BLOCK_BREWING_STAND:
+            mixWeight = 0.7;
             color = color_Furnace;
             range = 2;
             break;
@@ -149,6 +180,7 @@ void main() {
             range = 3;
             break;
         case BLOCK_CAVEVINE_BERRIES:
+            mixWeight = 0.85;
             color = vec3(230, 120, 30);
             range = 14;
             break;
@@ -173,6 +205,7 @@ void main() {
         case BLOCK_COPPER_TORCH_WALL_E:
         case BLOCK_COPPER_TORCH_WALL_S:
         case BLOCK_COPPER_TORCH_WALL_W:
+            mixWeight = 0.95;
             color = vec3(color_CopperTorch);
             range = 14;
             break;
@@ -197,6 +230,7 @@ void main() {
             mixWeight = 1.0;
             break;
         case BLOCK_EYEBLOSSOM_OPEN:
+            mixWeight = 0.90;
             color = vec3(230, 128, 47);
             range = 2;
             break;
@@ -205,12 +239,14 @@ void main() {
             range = 10;
             break;
         case BLOCK_END_ROD:
+            mixWeight = 0.95;
             color = vec3(244, 237, 223);
             range = 14;
             break;
         case BLOCK_CAMPFIRE_LIT_N_S:
         case BLOCK_CAMPFIRE_LIT_W_E:
         case BLOCK_FIRE:
+            mixWeight = 1.0;
             color = color_Fire;
             range = 15;
             break;
@@ -230,10 +266,12 @@ void main() {
         case BLOCK_FURNACE_LIT_E:
         case BLOCK_FURNACE_LIT_S:
         case BLOCK_FURNACE_LIT_W:
+            mixWeight = 0.0;
             color = color_Furnace;
             range = 6;
             break;
         case BLOCK_GLOWSTONE:
+            mixWeight = 0.0;
             color = vec3(190, 151, 83);
             range = 15;
             break;
@@ -241,6 +279,7 @@ void main() {
 //            color = vec4(190, 151, 83, 6);
 //            break;
         case BLOCK_GLOW_LICHEN:
+            mixWeight = 1.0;
             color = vec3(87, 184, 110);
             range = 7;
             break;
@@ -248,35 +287,49 @@ void main() {
         case BLOCK_JACK_O_LANTERN_E:
         case BLOCK_JACK_O_LANTERN_S:
         case BLOCK_JACK_O_LANTERN_W:
+            mixWeight = 0.0;
             color = vec3(196, 179, 83);
             range = 15;
             break;
         case BLOCK_LANTERN_CEIL:
         case BLOCK_LANTERN_FLOOR:
+            mixWeight = 0.85;
             color = vec3(231, 188, 115);
             range = 12;
             break;
         case BLOCK_LAVA:
+            mixWeight = 0.0;
             color = vec3(color_Torch);
             range = 15;
             break;
+//        case BLOCK_LIGHTING_ROD:
+//            mixWeight = 1.0;
+//            break;
         case BLOCK_LIGHTING_ROD_POWERED:
+            mixWeight = 1.0;
             color = vec3(222, 244, 249);
             range = 8;
             break;
         case BLOCK_MAGMA:
+            mixWeight = 0.0;
             color = vec3(190, 82, 28);
             range = 3;
             break;
         case BLOCK_NETHER_PORTAL:
+            mixWeight = 1.0;
             color = vec3(128, 42, 212);
             range = 11;
             break;
+//        case BLOCK_REDSTONE_LAMP:
+//            mixWeight = 0.0;
+//            break;
         case BLOCK_REDSTONE_LAMP_LIT:
+            mixWeight = 0.0;
             color = vec3(243, 203, 126);
             range = 15;
             break;
         case BLOCK_REDSTONE_ORE_LIT:
+            mixWeight = 0.0;
             color = color_RedstoneTorch;
             range = 9;
             break;
@@ -285,70 +338,87 @@ void main() {
         case BLOCK_REDSTONE_TORCH_WALL_E_LIT:
         case BLOCK_REDSTONE_TORCH_WALL_S_LIT:
         case BLOCK_REDSTONE_TORCH_WALL_W_LIT:
+            mixWeight = 0.95;
             color = color_RedstoneTorch;
             range = 7;
             break;
         case BLOCK_REDSTONE_WIRE_1:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 1.0;
             break;
         case BLOCK_REDSTONE_WIRE_2:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 1.5;
             break;
         case BLOCK_REDSTONE_WIRE_3:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 2.0;
             break;
         case BLOCK_REDSTONE_WIRE_4:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 2.5;
             break;
         case BLOCK_REDSTONE_WIRE_5:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 3.0;
             break;
         case BLOCK_REDSTONE_WIRE_6:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 3.5;
             break;
         case BLOCK_REDSTONE_WIRE_7:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 4.0;
             break;
         case BLOCK_REDSTONE_WIRE_8:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 4.5;
             break;
         case BLOCK_REDSTONE_WIRE_9:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 5.0;
             break;
         case BLOCK_REDSTONE_WIRE_10:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 5.5;
             break;
         case BLOCK_REDSTONE_WIRE_11:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 6.0;
             break;
         case BLOCK_REDSTONE_WIRE_12:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 6.5;
             break;
         case BLOCK_REDSTONE_WIRE_13:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 7.0;
             break;
         case BLOCK_REDSTONE_WIRE_14:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 7.5;
             break;
         case BLOCK_REDSTONE_WIRE_15:
+            mixWeight = 1.0;
             color = color_RedstoneTorch;
             range = 8.0;
             break;
         case BLOCK_REPEATER:
+            mixWeight = 0.9;
             color = color_RedstoneTorch;
             range = 7;
             break;
@@ -369,30 +439,37 @@ void main() {
             range = 15;
             break;
         case BLOCK_SCULK_CATALYST:
+            mixWeight = 0.5;
             color = vec3(46, 91, 94);
             range = 6;
             break;
         case BLOCK_SEA_LANTERN:
+            mixWeight = 0.0;
             color = vec3(141, 191, 219);
             range = 15;
             break;
         case BLOCK_SEA_PICKLE_WET_1:
+            mixWeight = 0.95;
             color = color_SeaPickle;
             range = 6;
             break;
         case BLOCK_SEA_PICKLE_WET_2:
+            mixWeight = 0.90;
             color = color_SeaPickle;
             range = 9;
             break;
         case BLOCK_SEA_PICKLE_WET_3:
+            mixWeight = 0.85;
             color = color_SeaPickle;
             range = 12;
             break;
         case BLOCK_SEA_PICKLE_WET_4:
+            mixWeight = 0.80;
             color = color_SeaPickle;
             range = 15;
             break;
         case BLOCK_SHROOMLIGHT:
+            mixWeight = 0.0;
             color = vec3(216, 120, 52);
             range = 15;
             break;
@@ -408,6 +485,7 @@ void main() {
         case BLOCK_SMOKER_LIT_E:
         case BLOCK_SMOKER_LIT_S:
         case BLOCK_SMOKER_LIT_W:
+            mixWeight = 0.0;
             color = color_Furnace;
             range = 6;
             break;
@@ -416,6 +494,7 @@ void main() {
         case BLOCK_SOUL_FIRE:
         case BLOCK_SOUL_LANTERN_CEIL:
         case BLOCK_SOUL_LANTERN_FLOOR:
+            mixWeight = 0.9;
             color = color_SoulFire;
             range = 12;
             break;
@@ -424,6 +503,7 @@ void main() {
         case BLOCK_SOUL_TORCH_WALL_E:
         case BLOCK_SOUL_TORCH_WALL_S:
         case BLOCK_SOUL_TORCH_WALL_W:
+            mixWeight = 1.0;
             color = color_SoulFire;
             range = 10;
             break;
@@ -432,78 +512,124 @@ void main() {
         case BLOCK_TORCH_WALL_E:
         case BLOCK_TORCH_WALL_S:
         case BLOCK_TORCH_WALL_W:
+            mixWeight = 1.0;
             color = vec3(color_Torch);
             range = 12;
+            break;
+        case BLOCK_TRAPDOOR_BOTTOM:
+            mixMask = MASK(1, 1, 1, 1, 1, 0);
+            mixWeight = 1.0;
+            break;
+        case BLOCK_TRAPDOOR_TOP:
+            mixMask = MASK(1, 1, 1, 1, 0, 1);
+            mixWeight = 1.0;
+            break;
+        case BLOCK_TRAPDOOR_N:
+            mixMask = MASK(0, 1, 1, 1, 1, 1);
+            mixWeight = 1.0;
+            break;
+        case BLOCK_TRAPDOOR_E:
+            mixMask = MASK(1, 0, 1, 1, 1, 1);
+            mixWeight = 1.0;
+            break;
+        case BLOCK_TRAPDOOR_S:
+            mixMask = MASK(1, 1, 0, 1, 1, 1);
+            mixWeight = 1.0;
+            break;
+        case BLOCK_TRAPDOOR_W:
+            mixMask = MASK(1, 1, 1, 0, 1, 1);
+            mixWeight = 1.0;
             break;
     }
 
     switch (blockId) {
         case BLOCK_HONEY:
             color = vec3(251, 187, 64);
+            mixWeight = 1.0;
             break;
         case BLOCK_LEAVES:
         case BLOCK_LEAVES_CHERRY:
             color = vec3(128, 128, 128);
+            mixWeight = 0.5;
             break;
         case BLOCK_ROOTS:
             color = vec3(166, 179, 166);
+            mixWeight = 0.9;
             break;
         case BLOCK_SLIME:
             color = vec3(104, 185, 84);
+            mixWeight = 1.0;
             break;
         case BLOCK_SNOW:
             color = vec3(96, 139, 158);
             break;
         case BLOCK_STAINED_GLASS_BLACK:
             color = vec3(77, 77, 77);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_BLUE:
             color = vec3(26, 26, 250);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_BROWN:
             color = vec3(144, 99, 38);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_CYAN:
             color = vec3(21, 136, 195);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_GRAY:
             color = vec3(102, 102, 102);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_GREEN:
             color = vec3(32, 206, 21);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_LIGHT_BLUE:
             color = vec3(82, 175, 244);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_LIGHT_GRAY:
             color = vec3(179, 179, 179);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_LIME:
             color = vec3(161, 236, 32);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_MAGENTA:
             color = vec3(178, 76, 216);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_ORANGE:
             color = vec3(234, 149, 47);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_PINK:
             color = vec3(242, 70, 127);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_PURPLE:
             color = vec3(147, 43, 231);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_RED:
             color = vec3(255, 48, 48);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_WHITE:
             color = vec3(245, 245, 245);
+            mixWeight = 1.0;
             break;
         case BLOCK_STAINED_GLASS_YELLOW:
             color = vec3(246, 246, 31);
+            mixWeight = 1.0;
             break;
         case BLOCK_TINTED_GLASS:
             color = vec3(51, 26, 51);
+            mixWeight = 1.0;
             break;
 
 //        case BLOCK_CANDLE_CAKE_LIT:
@@ -531,258 +657,322 @@ void main() {
             case BLOCK_BLACK_CANDLES_LIT_1:
                 color = color_CandleBlack;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BLACK_CANDLES_LIT_2:
                 color = color_CandleBlack;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BLACK_CANDLES_LIT_3:
                 color = color_CandleBlack;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BLACK_CANDLES_LIT_4:
                 color = color_CandleBlack;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BLUE_CANDLES_LIT_1:
                 color = color_CandleBlue;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BLUE_CANDLES_LIT_2:
                 color = color_CandleBlue;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BLUE_CANDLES_LIT_3:
                 color = color_CandleBlue;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BLUE_CANDLES_LIT_4:
                 color = color_CandleBlue;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BROWN_CANDLES_LIT_1:
                 color = color_CandleBrown;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BROWN_CANDLES_LIT_2:
                 color = color_CandleBrown;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BROWN_CANDLES_LIT_3:
                 color = color_CandleBrown;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_BROWN_CANDLES_LIT_4:
                 color = color_CandleBrown;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_CYAN_CANDLES_LIT_1:
                 color = color_CandleCyan;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_CYAN_CANDLES_LIT_2:
                 color = color_CandleCyan;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_CYAN_CANDLES_LIT_3:
                 color = color_CandleCyan;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_CYAN_CANDLES_LIT_4:
                 color = color_CandleCyan;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_GRAY_CANDLES_LIT_1:
                 color = color_CandleGray;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_GRAY_CANDLES_LIT_2:
                 color = color_CandleGray;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_GRAY_CANDLES_LIT_3:
                 color = color_CandleGray;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_GRAY_CANDLES_LIT_4:
                 color = color_CandleGray;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_GREEN_CANDLES_LIT_1:
                 color = color_CandleGreen;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_GREEN_CANDLES_LIT_2:
                 color = color_CandleGreen;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_GREEN_CANDLES_LIT_3:
                 color = color_CandleGreen;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_GREEN_CANDLES_LIT_4:
                 color = color_CandleGreen;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIGHT_BLUE_CANDLES_LIT_1:
                 color = color_CandleLightBlue;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIGHT_BLUE_CANDLES_LIT_2:
                 color = color_CandleLightBlue;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIGHT_BLUE_CANDLES_LIT_3:
                 color = color_CandleLightBlue;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIGHT_BLUE_CANDLES_LIT_4:
                 color = color_CandleLightBlue;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIGHT_GRAY_CANDLES_LIT_1:
                 color = color_CandleLightGray;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIGHT_GRAY_CANDLES_LIT_2:
                 color = color_CandleLightGray;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIGHT_GRAY_CANDLES_LIT_3:
                 color = color_CandleLightGray;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIGHT_GRAY_CANDLES_LIT_4:
                 color = color_CandleLightGray;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIME_CANDLES_LIT_1:
                 color = color_CandleLime;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIME_CANDLES_LIT_2:
                 color = color_CandleLime;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIME_CANDLES_LIT_3:
                 color = color_CandleLime;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_LIME_CANDLES_LIT_4:
                 color = color_CandleLime;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_MAGENTA_CANDLES_LIT_1:
                 color = color_CandleMagenta;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_MAGENTA_CANDLES_LIT_2:
                 color = color_CandleMagenta;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_MAGENTA_CANDLES_LIT_3:
                 color = color_CandleMagenta;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_MAGENTA_CANDLES_LIT_4:
                 color = color_CandleMagenta;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_ORANGE_CANDLES_LIT_1:
                 color = color_CandleOrange;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_ORANGE_CANDLES_LIT_2:
                 color = color_CandleOrange;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_ORANGE_CANDLES_LIT_3:
                 color = color_CandleOrange;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_ORANGE_CANDLES_LIT_4:
                 color = color_CandleOrange;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_PINK_CANDLES_LIT_1:
                 color = color_CandlePink;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_PINK_CANDLES_LIT_2:
                 color = color_CandlePink;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_PINK_CANDLES_LIT_3:
                 color = color_CandlePink;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_PINK_CANDLES_LIT_4:
                 color = color_CandlePink;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_PURPLE_CANDLES_LIT_1:
                 color = color_CandlePurple;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_PURPLE_CANDLES_LIT_2:
                 color = color_CandlePurple;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_PURPLE_CANDLES_LIT_3:
                 color = color_CandlePurple;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_PURPLE_CANDLES_LIT_4:
                 color = color_CandlePurple;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_RED_CANDLES_LIT_1:
                 color = color_CandleRed;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_RED_CANDLES_LIT_2:
                 color = color_CandleRed;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_RED_CANDLES_LIT_3:
                 color = color_CandleRed;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_RED_CANDLES_LIT_4:
                 color = color_CandleRed;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_WHITE_CANDLES_LIT_1:
                 color = color_White;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_WHITE_CANDLES_LIT_2:
                 color = color_White;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_WHITE_CANDLES_LIT_3:
                 color = color_White;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_WHITE_CANDLES_LIT_4:
                 color = color_White;
                 range = 12;
+                mixWeight = 1.0;
                 break;
             case BLOCK_YELLOW_CANDLES_LIT_1:
                 color = color_CandleYellow;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_YELLOW_CANDLES_LIT_2:
                 color = color_CandleYellow;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_YELLOW_CANDLES_LIT_3:
                 color = color_CandleYellow;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_YELLOW_CANDLES_LIT_4:
                 color = color_CandleYellow;
                 range = 12;
+                mixWeight = 1.0;
                 break;
         }
     #else
@@ -790,18 +980,22 @@ void main() {
             case BLOCK_CANDLES_LIT_1:
                 color = color_Candle;
                 range = 3;
+                mixWeight = 1.0;
                 break;
             case BLOCK_CANDLES_LIT_2:
                 color = color_Candle;
                 range = 6;
+                mixWeight = 1.0;
                 break;
             case BLOCK_CANDLES_LIT_3:
                 color = color_Candle;
                 range = 9;
+                mixWeight = 1.0;
                 break;
             case BLOCK_CANDLES_LIT_4:
                 color = color_Candle;
                 range = 12;
+                mixWeight = 1.0;
                 break;
         }
     #endif
@@ -810,18 +1004,22 @@ void main() {
         case ITEM_TORCH:
             color = vec3(color_Torch);
             range = 12;
+            mixWeight = 1.0;
             break;
         case ITEM_COPPER_TORCH:
             color = vec3(color_CopperTorch);
             range = 14;
+            mixWeight = 1.0;
             break;
         case ITEM_SOUL_TORCH:
             color = color_SoulFire;
             range = 10;
+            mixWeight = 1.0;
             break;
         case ITEM_REDSTONE_TORCH:
             color = color_RedstoneTorch;
             range = 7;
+            mixWeight = 1.0;
             break;
     }
 

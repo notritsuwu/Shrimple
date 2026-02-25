@@ -180,7 +180,7 @@ void main() {
     if (blockId > 0u && blockId < 65000u) {
         ivec2 blockMaskUV = ivec2(blockId % 256, blockId / 256);
         uint maskData = texelFetch(texBlockMask, blockMaskUV, 0).r;
-//        mixWeight = unpackUnorm4x8(maskData).r;
+        mixWeight = unpackUnorm4x8(maskData).r;
         mixMask = bitfieldExtract(maskData, 8, 8);
     }
 

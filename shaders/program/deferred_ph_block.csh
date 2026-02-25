@@ -45,6 +45,8 @@ uniform vec2 taa_offset = vec2(0.0);
 #include "/lib/blocks.glsl"
 #include "/lib/sampling/depth.glsl"
 #include "/lib/octohedral.glsl"
+#include "/lib/fresnel.glsl"
+#include "/lib/material.glsl"
 
 
 vec3 unprojectCorner(const in float screenPosX, const in float screenPosY) {
@@ -233,7 +235,26 @@ void main() {
             imageStore(imgLightDebug, group_uv, uvec4(counter));
         #endif
 
+
         uvec2 reflectData = texelFetch(TEX_REFLECT_SPECULAR, uv, 0).rg;
+        vec4 specularData = unpackUnorm4x8(reflectData.g);
+
+        #ifdef MATERIAL_PBR_ENABLED
+            float smoothness = 1.0 - mat_roughness(specularData.r);
+            float metalness = mat_metalness(specularData.g);
+            float f0 = mat_f0(specularData.g);
+
+            lighting *= 1.0 - metalness * sqrt(smoothness);
+        #else
+            float smoothness = 1.0 - mat_roughness_lab(specularData.r);
+            float f0 = mat_f0_lab(specularData.g);
+        #endif
+
+        vec3 localViewDir = normalize(localPos);
+        float NoV = dot(localTexNormal, -localViewDir);
+        lighting *= 1.0 - F_schlick(NoV, f0, 1.0) * _pow2(smoothness);
+
+
         vec4 reflectDataR = unpackUnorm4x8(reflectData.r);
         lighting *= RGBToLinear(reflectDataR.rgb);
     }
