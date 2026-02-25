@@ -104,7 +104,7 @@ vec3 sample_indirect_lighting(const in vec3 localPos, const in vec3 localNormal)
 
     vec3 lighting;
     if (!ray.result_hit && !ray_iteration_bound_reached) {
-        lighting = RGBToLinear(skyColor);
+        lighting = 0.3 * RGBToLinear(skyColor);
     }
     else {
         lighting = vec3(0.0);
@@ -136,12 +136,12 @@ vec3 sample_indirect_lighting(const in vec3 localPos, const in vec3 localNormal)
             if (!ray.result_hit && !ray_iteration_bound_reached) {
                 #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
                     vec3 localSunLightDir = normalize(mul3(gbufferModelViewInverse, sunPosition));
-                    vec3 sunlightColor = GetSkyLightColor(localSunLightDir.y);
+                    vec3 skylightColor = GetSkyLightColor(localSunLightDir.y);
                 #else
-                    const vec3 sunlightColor = RGBToLinear(vec3(0.89, 0.863, 0.722));
+                    const vec3 skylightColor = RGBToLinear(vec3(0.89, 0.863, 0.722));
                 #endif
 
-                lighting += sky_NoL * hitAlbedo * sunlightColor;
+                lighting += sky_NoL * hitAlbedo * skylightColor;
             }
         }
     }
@@ -194,7 +194,7 @@ void main() {
     // adjust history weight on position match
     float viewDist = length(viewPos);
     float dist = distance(localPos, prev_pos);
-    prev_color.a *= step(dist, 0.02*viewDist);
+    prev_color.a *= step(dist, max(0.02*viewDist, 0.2));
 
     prev_color.a = clamp(prev_color.a + 1.0, 1.0, 64.0);
     prev_color.rgb = mix(prev_color.rgb, color, 1.0 / prev_color.a);

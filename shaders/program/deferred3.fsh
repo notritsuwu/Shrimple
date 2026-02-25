@@ -16,12 +16,12 @@ layout(location = 0) out vec4 outFinal;
 
 void main() {
     ivec2 uv = ivec2(gl_FragCoord.xy);
-    vec3 lighting = texelFetch(TEX_GI_COLOR, uv, 0).rgb;
+    vec4 lighting = texelFetch(TEX_GI_COLOR, uv, 0);
 
     uvec2 reflectData = texelFetch(TEX_REFLECT_SPECULAR, uv, 0).rg;
     vec4 reflectDataR = unpackUnorm4x8(reflectData.r);
-    lighting *= RGBToLinear(reflectDataR.rgb);
+    lighting.rgb *= RGBToLinear(reflectDataR.rgb);
 
     vec3 src = texelFetch(TEX_FINAL, uv, 0).rgb;
-    outFinal = vec4(src + lighting, 1.0);
+    outFinal = vec4(src + lighting.rgb * saturate(lighting.a / 8.0), 1.0);
 }

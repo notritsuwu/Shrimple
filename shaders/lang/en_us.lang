@@ -142,3 +142,5 @@ option.PHOTONICS_BLOCK_TINT_ENABLED.comment=Allows traced lighting & reflections
 option.PHOTONICS_HAND_LIGHT_ENABLED=Hand Light
 
 option.PHOTONICS_BLOCK_LIGHT_ENABLED=Block Light
+
+option.PHOTONICS_GI_ENABLED=Global Illumination
