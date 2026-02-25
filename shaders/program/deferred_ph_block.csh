@@ -183,6 +183,15 @@ void main() {
         vec3 localGeoNormal = OctDecode(unpackUnorm2x16(geoNormalData));
 
 
+        #if defined(PHOTONICS_LIGHT_DEBUG) && PH_LIGHT_OFFSET == 0
+            ivec2 group_uv = ivec2(gl_WorkGroupID.xy);
+            uvec4 data = imageLoad(imgLightDebug, group_uv);
+            data.r += counter;
+            imageStore(imgLightDebug, group_uv, data);
+//            imageAtomicAdd(imgLightDebug, group_uv, uvec4(counter));
+        #endif
+
+
         counter = min(counter, PH_MAX_LIGHTS);
         for (uint i = 0; i < counter; i++) {
             int lightIndex = sharedLightList[i];
@@ -228,12 +237,6 @@ void main() {
 
             lighting += NoLm * _pow2(att) * lightColor;
         }
-
-        // TODO: make this additive for multiple passes!
-        #if defined(PHOTONICS_LIGHT_DEBUG) && PH_LIGHT_OFFSET == 0
-            ivec2 group_uv = ivec2(gl_WorkGroupID.xy);
-            imageStore(imgLightDebug, group_uv, uvec4(counter));
-        #endif
 
 
         uvec2 reflectData = texelFetch(TEX_REFLECT_SPECULAR, uv, 0).rg;

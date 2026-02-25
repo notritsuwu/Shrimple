@@ -25,5 +25,7 @@
 #define TEX_REFLECT_SPECULAR colortex2
 #define TEX_GEO_NORMAL colortex3
 #define TEX_BLOOM_TILES colortex5
+#define TEX_GI_COLOR colortex6
+#define TEX_GI_POSITION colortex7
 
 const vec3 luma_factor = vec3(0.2126, 0.7152, 0.0722);

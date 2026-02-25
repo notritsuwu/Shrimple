@@ -4,7 +4,10 @@ shadowcomp		floodfill propagation
 
 prepare1		fog/sky color [nether only]
 
-deferred1       photonics lighting
+deferred1       photonics hand lighting
+deferred2       photonics GI lighting
+deferred10      photonics lighting [  0-255]
+deferred11      photonics lighting [256-511]
 
 composite70		bloom downscale 1/2
 composite71		bloom downscale 1/4

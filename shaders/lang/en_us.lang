@@ -104,6 +104,9 @@ option.SHADOW_RESOLUTION=Resolution
 option.shadowDistance=Distance
 suffix.shadowDistance=m
 
+option.SHADOW_AMBIENT=Ambient
+suffix.SHADOW_AMBIENT=%
+
 
 screen.POST=Post-Processing
 

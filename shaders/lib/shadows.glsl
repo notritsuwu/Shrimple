@@ -1,3 +1,4 @@
+const float shadowAmbientF = SHADOW_AMBIENT * 0.01;
 const float Shadow_DistortF = 0.16;
 
 

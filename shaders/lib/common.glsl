@@ -4,6 +4,11 @@ const int colortex1Format  = R32UI;
 const int colortex2Format  = RG32UI;
 const int colortex3Format  = R32UI;
 const int colortex5Format  = RGBA16F;
+const int colortex6Format  = RGBA16F;
+const int colortex7Format  = RGBA16F;
+
+const bool colortex6Clear = false;
+const bool colortex7Clear = false;
 */
 
 
@@ -42,7 +47,7 @@ const float sunPathRotation = 20; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -1
 //#define SHADOWS_ENABLED
 #define SHADOW_RESOLUTION 1024 // [128 256 512 768 1024 1536 2048 3072 4096 6144 8192]
 const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 450 500 600 700 800 900 1000 1200 1400 1600 1800 2000 2200 2400 2600 2800 3000 3200 3400 3600 3800 4000]
-
+#define SHADOW_AMBIENT 20 // [0 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95]
 //#define BLOOM_ENABLED
 #define BLOOM_STRENGTH 2.0 // [0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.2 5.4 5.6 5.8 6.0 8 10 12 14 16 18 20]
 
@@ -57,6 +62,7 @@ const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 4
 #define PHOTONICS_HAND_LIGHT_ENABLED
 #define PHOTONICS_BLOCK_LIGHT_ENABLED
 //#define PHOTONICS_BLOCK_TINT_ENABLED
+#define PHOTONICS_GI_ENABLED
 #define PHOTONICS_LIGHT_STEPS 16 // [2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32]
 //#define PHOTONICS_LIGHT_DEBUG
 
@@ -93,6 +99,7 @@ const float dh_clipDistF = 0.85;
     #undef PHOTONICS_REFLECT_ENABLED
     #undef PHOTONICS_HAND_LIGHT_ENABLED
     #undef PHOTONICS_BLOCK_LIGHT_ENABLED
+    #undef PHOTONICS_GI_ENABLED
     #undef PHOTONICS_LIGHT_DEBUG
 #endif
 
@@ -100,7 +107,7 @@ const float dh_clipDistF = 0.85;
     #undef PHOTONICS_HAND_LIGHT_ENABLED
 #endif
 
-#if defined(PHOTONICS_HAND_LIGHT_ENABLED) || defined(PHOTONICS_BLOCK_LIGHT_ENABLED)
+#if defined(PHOTONICS_HAND_LIGHT_ENABLED) || defined(PHOTONICS_BLOCK_LIGHT_ENABLED) || defined(PHOTONICS_GI_ENABLED)
     #define PHOTONICS_LIGHT_ENABLED
 #endif
 
@@ -115,6 +122,9 @@ const float dh_clipDistF = 0.85;
 #endif
 
 #ifdef PHOTONICS_BLOCK_LIGHT_ENABLED
+#endif
+
+#ifdef PHOTONICS_GI_ENABLED
 #endif
 
 #ifdef BLOOM_ENABLED

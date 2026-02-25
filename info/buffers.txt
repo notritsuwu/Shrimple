@@ -5,6 +5,9 @@ colortex2		    RG32UI		1.0		reflection albedo, specular
 colortex3		    R32UI		1.0		photonics geo normal
 colortex5		    RGBA16F		1.0		bloom tiles
 
+colortex6		    RGBA16F		1.0		GI color
+colortex7		    RGBA16F		1.0		GI position
+
 
 ### CUSTOM IMAGES
 imgVoxels           R16UI       *3D     voxel buffer

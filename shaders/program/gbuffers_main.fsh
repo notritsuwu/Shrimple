@@ -94,9 +94,10 @@ uniform float dhFarPlane;
 #include "/lib/fog.glsl"
 #include "/lib/tbn.glsl"
 #include "/lib/sampling/lightmap.glsl"
+#include "/lib/octohedral.glsl"
+#include "/lib/shadows.glsl"
 
 #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
-    #include "/lib/octohedral.glsl"
     #include "/lib/fresnel.glsl"
     #include "/lib/material.glsl"
 #endif
@@ -116,10 +117,6 @@ uniform float dhFarPlane;
 #ifdef LIGHTING_COLORED
     #include "/lib/voxel.glsl"
     #include "/lib/floodfill-render.glsl"
-#endif
-
-#ifdef SHADOWS_ENABLED
-    #include "/lib/shadows.glsl"
 #endif
 
 #ifdef LIGHTING_HAND
@@ -286,6 +283,8 @@ void main() {
         float lpvFade = GetVoxelFade(voxelPos);
     #endif
 
+//    float shadowF = shadow * (1.0 - shadowAmbientF) + shadowAmbientF;
+
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         lmcoord = _pow3(lmcoord);
 
@@ -302,7 +301,7 @@ void main() {
         vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
 
         float skyLight_NoLm = max(dot(localSkyLightDir, localTexNormal), 0.0);
-        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
+        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*(1.0 - shadowAmbientF) + shadowAmbientF) * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
 
@@ -313,7 +312,7 @@ void main() {
         // TODO: move to ambient lighting?
         color.rgb *= tex_occlusion;
     #else
-        lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
+        lmcoord.y = min(lmcoord.y, shadow * (1.0 - shadowAmbientF) + shadowAmbientF);
 
         lmcoord.y *= GetOldLighting(localTexNormal);
 
