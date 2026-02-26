@@ -86,9 +86,8 @@ float Gaussian(const in float sigma, const in float x) {
 }
 
 float BilateralGaussianBlur() {
-    const float g_sigmaX = 1.6;
-    const float g_sigmaY = 1.6;
-    const float g_sigmaV = 1.6;
+    const float g_sigmaXY = 1.6;
+    const float g_sigmaV = 0.2;
 
     ivec2 luv = ivec2(gl_LocalInvocationID.xy) + 2;
     float depthL = sharedDepthL[getSharedIndex(luv)];
@@ -96,10 +95,10 @@ float BilateralGaussianBlur() {
     float accum = 0.0;
     float total = 0.0;
     for (int iy = -2; iy <= 2; iy++) {
-        float fy = Gaussian(g_sigmaY, iy);
+        float fy = Gaussian(g_sigmaXY, iy);
 
         for (int ix = -2; ix <= 2; ix++) {
-            float fx = Gaussian(g_sigmaX, ix);
+            float fx = Gaussian(g_sigmaXY, ix);
 
             int shared_i = getSharedIndex(luv + ivec2(ix, iy));
             float sampleOcclusion = sharedOcclusion[shared_i];
