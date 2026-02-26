@@ -8,6 +8,8 @@ deferred1       photonics hand lighting
 deferred2       photonics GI lighting
 deferred10      photonics lighting [  0-255]
 deferred11      photonics lighting [256-511]
+deferred20      voxy/DH SSAO
+deferred21      voxy/DH SSAO apply
 
 composite70		bloom downscale 1/2
 composite71		bloom downscale 1/4

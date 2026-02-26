@@ -1,0 +1,188 @@
+#include "/lib/constants.glsl"
+#include "/lib/common.glsl"
+
+#define TEX_DEPTH depthtex0
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+const vec2 workGroupsRender = vec2(1.0, 1.0);
+
+
+layout(rgba16f) uniform writeonly image2D IMG_FINAL;
+
+shared float sharedOcclusion[20*20];
+shared float sharedDepthL[20*20];
+
+uniform sampler2D TEX_FINAL;
+uniform sampler2D TEX_DEPTH;
+uniform sampler2D TEX_SSAO;
+//uniform usampler2D TEX_TEX_NORMAL;
+//uniform usampler2D TEX_REFLECT_SPECULAR;
+
+#ifdef DISTANT_HORIZONS
+    uniform sampler2D dhDepthTex0;
+#endif
+
+uniform float far;
+uniform vec2 viewSize;
+uniform float farPlane;
+uniform float nearPlane;
+uniform vec3 fogColor;
+uniform float fogDensity;
+uniform float fogStart;
+uniform float fogEnd;
+uniform vec3 skyColor;
+uniform int isEyeInWater;
+uniform mat4 gbufferModelViewInverse;
+uniform mat4 gbufferProjectionInverse;
+uniform vec2 taa_offset = vec2(0.0);
+
+uniform float dhNearPlane;
+uniform float dhFarPlane;
+uniform mat4 dhProjectionInverse;
+uniform int vxRenderDistance;
+
+#include "/lib/sampling/depth.glsl"
+#include "/lib/oklab.glsl"
+#include "/lib/fog.glsl"
+#include "/lib/ssao.glsl"
+
+
+#ifdef DISTANT_HORIZONS
+    #define _projection dhProjection
+    #define _projectionInv dhProjectionInverse
+#else
+    #define _projection gbufferProjection
+    #define _projectionInv gbufferProjectionInverse
+#endif
+
+
+int getSharedIndex(const in ivec2 uv) {
+    return uv.y * 20 + uv.x;
+}
+
+void copyToShared(const in ivec2 uv_base, const in uint i_shared) {
+    if (i_shared >= (20*20)) return;
+
+    ivec2 uv = uv_base + ivec2(i_shared % 20, i_shared / 20);
+    sharedOcclusion[i_shared] = texelFetch(TEX_SSAO, uv, 0).r;
+
+    float depth = texelFetch(TEX_DEPTH, uv, 0).r;
+    float _near = nearPlane;
+    float _far = farPlane;
+
+    #ifdef DISTANT_HORIZONS
+        if (depth >= 1.0) {
+            depth = texelFetch(dhDepthTex0, uv, 0).r;
+            _near = dhNearPlane;
+            _far = dhFarPlane;
+        }
+    #endif
+
+    sharedDepthL[i_shared] = linearizeDepth(depth * 2.0 - 1.0, _near, _far);
+}
+
+float Gaussian(const in float sigma, const in float x) {
+    return exp(_pow2(x) / (-2.0 * _pow2(sigma)));
+}
+
+float BilateralGaussianBlur() {
+    const float g_sigmaX = 1.6;
+    const float g_sigmaY = 1.6;
+    const float g_sigmaV = 1.6;
+
+    ivec2 luv = ivec2(gl_LocalInvocationID.xy) + 2;
+    float depthL = sharedDepthL[getSharedIndex(luv)];
+
+    float accum = 0.0;
+    float total = 0.0;
+    for (int iy = -2; iy <= 2; iy++) {
+        float fy = Gaussian(g_sigmaY, iy);
+
+        for (int ix = -2; ix <= 2; ix++) {
+            float fx = Gaussian(g_sigmaX, ix);
+
+            int shared_i = getSharedIndex(luv + ivec2(ix, iy));
+            float sampleOcclusion = sharedOcclusion[shared_i];
+            float sampleDepthL = sharedDepthL[shared_i];
+
+            float depthDiff = abs(sampleDepthL - depthL);
+            float fv = Gaussian(g_sigmaV, depthDiff);
+
+            float weight = fx*fy*fv;
+            accum += weight * sampleOcclusion;
+            total += weight;
+        }
+    }
+
+    if (total <= EPSILON) return 1.0;
+    return accum / total;
+}
+
+
+void main() {
+    // preload shared memory
+    int i_base = int(gl_LocalInvocationIndex) * 2;
+    ivec2 uv_base = ivec2(gl_WorkGroupID.xy) * 16 - 2;
+
+    copyToShared(uv_base, i_base + 0);
+    copyToShared(uv_base, i_base + 1);
+
+    memoryBarrierShared();
+    barrier();
+
+    // exit early if OOB
+    ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+    if (any(greaterThanEqual(uv, viewSize))) return;
+
+    vec3 color = texelFetch(TEX_FINAL, uv, 0).rgb;
+    float depth = texelFetch(TEX_DEPTH, uv, 0).r;
+
+    #ifdef DISTANT_HORIZONS
+        #define SSAO_PROJ_INV projectionInv
+        mat4 projectionInv = gbufferProjectionInverse;
+
+        if (depth >= 1.0) {
+            projectionInv = dhProjectionInverse;
+            depth = texelFetch(dhDepthTex0, uv, 0).r;
+        }
+    #else
+        #define SSAO_PROJ_INV gbufferProjectionInverse
+    #endif
+
+    if (depth < 1.0) {
+        vec2 texcoord = (gl_GlobalInvocationID.xy + 0.5) / viewSize;
+        vec3 screenPos = vec3(texcoord, depth);
+
+        #ifdef TAA_ENABLED
+            // screenPos.xy -= taa_offset;
+        #endif
+
+        vec3 ndcPos = screenPos * 2.0 - 1.0;
+
+        // TODO: fix hand depth
+
+        vec3 viewPos = project(SSAO_PROJ_INV, ndcPos);
+        vec3 localPos = mul3(gbufferModelViewInverse, viewPos);
+
+        float viewDist = length(localPos);
+
+        float occlusion = BilateralGaussianBlur();
+//        float occlusion = texelFetch(TEX_SSAO, uv, 0).r;
+
+        occlusion = mix(1.0, occlusion, SSAO_GetFade(viewDist));
+        color *= occlusion;
+
+        float borderFogF = GetBorderFogStrength(viewDist);
+        float envFogF = smoothstep(fogStart, fogEnd, viewDist);
+        float fogF = max(borderFogF, envFogF);
+
+        vec3 fogColorL = RGBToLinear(fogColor);
+        vec3 skyColorL = RGBToLinear(skyColor);
+        vec3 localViewDir = normalize(localPos);
+        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+
+        color.rgb = mix(color.rgb, fogColorFinal, fogF);
+    }
+
+    imageStore(IMG_FINAL, uv, vec4(color, 1.0));
+}

@@ -70,22 +70,12 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
         vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
 
-
-
-//        const vec3 skyLightColor = pow(vec3(0.961, 0.925, 0.843), vec3(2.2));
-
         vec3 localSkyLightDir = normalize(mat3(vxModelViewInv) * shadowLightPosition);
         float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
 
-//        vec3 localSunLightDir = normalize(mat3(vxModelViewInv) * sunPosition);
-//        float dayF = smoothstep(-0.15, 0.05, localSunLightDir.y);
-//        float skyLightBrightness = mix(0.02, 1.00, dayF);
         vec3 skyLight = lmcoord.y * (skyLight_NoLm*0.7 + 0.3) * skyLightColor;
 
         color.rgb = albedo.rgb * (blockLight + skyLight);
-
-        // TODO: AO
-        // color.rgb *= _pow2(vIn.color.a);
     #else
         lmcoord.y *= GetOldLighting(localNormal);
 
@@ -96,27 +86,27 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         color.rgb = albedo.rgb * lit;
     #endif
 
-    float borderFogF = GetBorderFogStrength(viewDist);
-    float envFogF = smoothstep(fogStart, fogEnd, viewDist);
-    float fogF = max(borderFogF, envFogF);
+    #if !defined(SSAO_ENABLED) || defined(RENDER_TRANSLUCENT)
+        float borderFogF = GetBorderFogStrength(viewDist);
+        float envFogF = smoothstep(fogStart, fogEnd, viewDist);
+        float fogF = max(borderFogF, envFogF);
 
-    vec3 fogColorL = RGBToLinear(fogColor);
-    vec3 skyColorL = RGBToLinear(skyColor);
-    vec3 localViewDir = normalize(localPos);
-    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+        vec3 fogColorL = RGBToLinear(fogColor);
+        vec3 skyColorL = RGBToLinear(skyColor);
+        vec3 localViewDir = normalize(localPos);
+        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
 
-    color.rgb = mix(color.rgb, fogColorFinal, fogF);
+        color.rgb = mix(color.rgb, fogColorFinal, fogF);
+    #endif
 
     outFinal = color;
 
-    #ifdef PHOTONICS_LIGHT_ENABLED
-        outGeoNormal = packUnorm2x16(OctEncode(localNormal));
-    #endif
+    outGeoNormal = packUnorm2x16(OctEncode(localNormal));
 
-    #if defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
-        vec3 viewNormal = mat3(gbufferModelView) * localNormal;
-        outTexNormal = packUnorm2x16(OctEncode(viewNormal));
+    vec3 viewNormal = mat3(gbufferModelView) * localNormal;
+    outTexNormal = packUnorm2x16(OctEncode(viewNormal));
 
+    #ifdef DEFERRED_SPECULAR_ENABLED
         outReflectSpecular = uvec2(
             packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord.y)),
             packUnorm4x8(specularData));

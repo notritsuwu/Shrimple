@@ -79,12 +79,14 @@ void main() {
 
     outFinal = color;
 
-    #ifdef PHOTONICS_LIGHT_ENABLED
+    #ifdef DEFERRED_NORMAL_ENABLED
         outGeoNormal = packUnorm2x16(OctEncode(localNormal));
+
+        vec3 viewNormal = mat3(gbufferModelView) * localNormal;
+        outTexNormal = packUnorm2x16(OctEncode(viewNormal));
     #endif
 
-    #ifdef LIGHTING_REFLECT_ENABLED
-        outTexNormal = packUnorm2x16(OctEncode(localNormal));
+    #ifdef DEFERRED_SPECULAR_ENABLED
         outReflectSpecular = uvec2(0u);
     #endif
 }

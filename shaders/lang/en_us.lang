@@ -3,8 +3,14 @@ profile.ENHANCED=Enhanced
 
 
 screen.DEBUG=Shrimple
+screen.DEBUG.comment=An internal collection of development related settings. Not for regular users!
+
+option.DEBUG_VIEW=Debug View
+value.DEBUG_VIEW.0=None
+value.DEBUG_VIEW.1=SSAO
 
 option.DEBUG_WHITEWORLD=White-World
+option.DEBUG_WHITEWORLD.comment=Makes all textures white, for inspecting lighting alone.
 
 
 screen.WORLD=World
@@ -108,17 +114,28 @@ option.SHADOW_AMBIENT=Ambient
 suffix.SHADOW_AMBIENT=%
 
 
-screen.POST=Post-Processing
-
-option.TONEMAP_ENABLED=Tone Mapping
+screen.EFFECTS=Effects
 
 
-screen.BLOOM=Bloom
+screen.EFFECT_BLOOM=Bloom
 
 option.BLOOM_ENABLED=Enabled
 
 option.BLOOM_STRENGTH=Strength
 suffix.BLOOM_STRENGTH=%
+
+
+screen.EFFECT_SSAO=SSAO
+screen.EFFECT_SSAO.comment=Screen-Space Ambient Occlusion. For Voxy or Distant Horizons chunks only!
+
+option.SSAO_ENABLED=Enabled
+
+option.SSAO_SAMPLES=Sample Count
+
+
+screen.POST=Post-Processing
+
+option.TONEMAP_ENABLED=Tone Mapping
 
 
 screen.TAA=TAA

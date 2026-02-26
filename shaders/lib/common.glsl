@@ -1,13 +1,13 @@
 /*
-const int colortex0Format  = RGBA16F;
-const int colortex1Format  = R32UI;
-const int colortex2Format  = RG32UI;
-const int colortex3Format  = R32UI;
-const int colortex5Format  = RGBA16F;
-const int colortex6Format  = RGBA16F;
-const int colortex7Format  = RGBA16F;
-
+const int colortex0Format = RGBA16F;
+const int colortex1Format = R16F;
+const int colortex2Format = R32UI;
+const int colortex3Format = RG32UI;
+const int colortex4Format = R32UI;
+const int colortex5Format = RGBA16F;
+const int colortex6Format = RGBA16F;
 const bool colortex6Clear = false;
+const int colortex7Format = RGBA16F;
 const bool colortex7Clear = false;
 */
 
@@ -51,6 +51,9 @@ const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 4
 //#define BLOOM_ENABLED
 #define BLOOM_STRENGTH 2.0 // [0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.2 5.4 5.6 5.8 6.0 8 10 12 14 16 18 20]
 
+#define SSAO_ENABLED
+#define SSAO_SAMPLES 4 // [2 4 6 8 10 12]
+
 //#define TONEMAP_ENABLED
 
 #define TAA_ENABLED
@@ -67,6 +70,7 @@ const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 4
 //#define PHOTONICS_LIGHT_DEBUG
 
 //#define DEBUG
+#define DEBUG_VIEW 0 // [0 1]
 //#define DEBUG_WHITEWORLD
 
 
@@ -128,6 +132,17 @@ const float dh_clipDistF = 0.85;
 #endif
 
 #ifdef BLOOM_ENABLED
+#endif
+
+#ifdef SSAO_ENABLED
+#endif
+
+#if defined(VOXY) || defined(DISTANT_HORIZONS) || defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
+    #define DEFERRED_NORMAL_ENABLED
+#endif
+
+#if defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
+    #define DEFERRED_SPECULAR_ENABLED
 #endif
 
 

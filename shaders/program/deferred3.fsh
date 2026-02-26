@@ -96,16 +96,17 @@ vec3 filter_ATrous(const in vec2 texcoord) {
 
 
 /* RENDERTARGETS: 0 */
-layout(location = 0) out vec4 outFinal;
+layout(location = 0) out vec3 outFinal;
 
 void main() {
+    ivec2 uv = ivec2(gl_FragCoord.xy);
+    vec3 src = texelFetch(TEX_FINAL, uv, 0).rgb;
+    uvec2 reflectData = texelFetch(TEX_REFLECT_SPECULAR, uv, 0).rg;
+
     vec3 lighting = filter_ATrous(texcoord);
 
-    ivec2 uv = ivec2(gl_FragCoord.xy);
-    uvec2 reflectData = texelFetch(TEX_REFLECT_SPECULAR, uv, 0).rg;
     vec4 reflectDataR = unpackUnorm4x8(reflectData.r);
-    lighting *= RGBToLinear(reflectDataR.rgb);
+    lighting *= 0.3 * RGBToLinear(reflectDataR.rgb);
 
-    vec3 src = texelFetch(TEX_FINAL, uv, 0).rgb;
-    outFinal = vec4(src + lighting, 1.0);
+    outFinal = src + lighting;
 }

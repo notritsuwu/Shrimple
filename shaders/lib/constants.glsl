@@ -21,6 +21,7 @@
 
 #define TEX_FINAL colortex0
 #define IMG_FINAL colorimg0
+#define TEX_SSAO colortex1
 #define TEX_TEX_NORMAL colortex2
 #define TEX_REFLECT_SPECULAR colortex3
 #define TEX_GEO_NORMAL colortex4
@@ -28,4 +29,8 @@
 #define TEX_GI_COLOR colortex6
 #define TEX_GI_POSITION colortex7
 
+#define DEBUG_VIEW_NONE 0
+#define DEBUG_VIEW_SSAO 1
+
 const vec3 luma_factor = vec3(0.2126, 0.7152, 0.0722);
+const float GOLDEN_ANGLE = 2.39996323;

@@ -182,15 +182,17 @@ void main() {
         color.rgb += albedo * emission;
     #endif
 
-    float borderFogF = GetBorderFogStrength(viewDist);
-    float envFogF = smoothstep(fogStart, fogEnd, viewDist);
-    float fogF = max(borderFogF, envFogF);
+    #if !defined(SSAO_ENABLED) || defined(RENDER_TRANSLUCENT)
+        float borderFogF = GetBorderFogStrength(viewDist);
+        float envFogF = smoothstep(fogStart, fogEnd, viewDist);
+        float fogF = max(borderFogF, envFogF);
 
-    vec3 fogColorL = RGBToLinear(fogColor);
-    vec3 skyColorL = RGBToLinear(skyColor);
-    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+        vec3 fogColorL = RGBToLinear(fogColor);
+        vec3 skyColorL = RGBToLinear(skyColor);
+        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
 
-    color.rgb = mix(color.rgb, fogColorFinal, fogF);
+        color.rgb = mix(color.rgb, fogColorFinal, fogF);
+    #endif
 
     outFinal = color;
 

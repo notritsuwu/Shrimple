@@ -212,16 +212,17 @@ void main() {
 
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 
-//    color.rgb = lpvSample;
-
 
     outFinal = color;
 
-    #ifdef LIGHTING_REFLECT_ENABLED
+    #ifdef DEFERRED_NORMAL_ENABLED
+        outGeoNormal = packUnorm2x16(OctEncode(localNormal));
+
         vec3 viewNormal = mat3(gbufferModelView) * localNormal;
-
         outTexNormal = packUnorm2x16(OctEncode(viewNormal));
+    #endif
 
+    #ifdef DEFERRED_SPECULAR_ENABLED
         outReflectSpecular = uvec2(
             packUnorm4x8(vec4(LinearToRGB(albedo.rgb), vIn.lmcoord.y)),
             packUnorm4x8(specularData));

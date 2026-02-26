@@ -96,6 +96,7 @@ uniform float dhFarPlane;
 #include "/lib/sampling/lightmap.glsl"
 #include "/lib/octohedral.glsl"
 #include "/lib/shadows.glsl"
+#include "/lib/ssao.glsl"
 
 #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
     #include "/lib/fresnel.glsl"
@@ -304,13 +305,6 @@ void main() {
         vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*(1.0 - shadowAmbientF) + shadowAmbientF) * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
-
-        #ifdef RENDER_TERRAIN
-            color.rgb *= _pow2(vIn.color.a);
-        #endif
-
-        // TODO: move to ambient lighting?
-        color.rgb *= tex_occlusion;
     #else
         lmcoord.y = min(lmcoord.y, shadow * (1.0 - shadowAmbientF) + shadowAmbientF);
 
@@ -331,8 +325,20 @@ void main() {
         #endif
 
         color.rgb = albedo * lit;
-        color.rgb *= tex_occlusion;
     #endif
+
+    #ifdef RENDER_TERRAIN
+        float occlusion = _pow2(vIn.color.a);
+
+        #if defined(VOXY) || defined(DISTANT_HORIZONS)
+            occlusion = mix(occlusion, 1.0, SSAO_GetFade(viewDist));
+        #endif
+
+        color.rgb *= occlusion;
+    #endif
+
+    // TODO: move to ambient lighting?
+    color.rgb *= tex_occlusion;
 
     #if defined(LIGHTING_HAND) && defined(LIGHTING_COLORED) && !defined(PHOTONICS_HAND_LIGHT_ENABLED)
         float handLight1 = max(heldBlockLightValue  - handDist, 0.0) / 15.0;
@@ -407,15 +413,14 @@ void main() {
 
     outFinal = color;
 
-    #ifdef PHOTONICS_LIGHT_ENABLED
+    #ifdef DEFERRED_NORMAL_ENABLED
         outGeoNormal = packUnorm2x16(OctEncode(localGeoNormal));
+
+        vec3 viewTexNormal = mat3(gbufferModelView) * localTexNormal;
+        outTexNormal = packUnorm2x16(OctEncode(viewTexNormal));
     #endif
 
-    #if defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
-        vec3 viewTexNormal = mat3(gbufferModelView) * localTexNormal;
-
-        outTexNormal = packUnorm2x16(OctEncode(viewTexNormal));
-
+    #ifdef DEFERRED_SPECULAR_ENABLED
         outReflectSpecular = uvec2(
             packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord.y)),
             packUnorm4x8(specularData));

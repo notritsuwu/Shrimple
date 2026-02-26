@@ -58,8 +58,12 @@ void main() {
 
     outFinal = final;
 
-    #ifdef LIGHTING_REFLECT_ENABLED
+    #ifdef DEFERRED_NORMAL_ENABLED
+        outGeoNormal = 0u;
         outTexNormal = 0u;
+    #endif
+
+    #ifdef DEFERRED_SPECULAR_ENABLED
         outReflectSpecular = uvec2(0u);
     #endif
 }

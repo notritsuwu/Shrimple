@@ -104,7 +104,7 @@ vec3 sample_indirect_lighting(const in vec3 localPos, const in vec3 localNormal)
 
     vec3 lighting;
     if (!ray.result_hit && !ray_iteration_bound_reached) {
-        lighting = 0.3 * RGBToLinear(skyColor);
+        lighting = RGBToLinear(skyColor);
     }
     else {
         lighting = vec3(0.0);
@@ -115,7 +115,7 @@ vec3 sample_indirect_lighting(const in vec3 localPos, const in vec3 localNormal)
             vec3 hitLocalPos = ray.result_position - (cameraPosition - world_offset);
             vec3 voxelPos = GetVoxelPosition(hitLocalPos);
             vec3 samplePos = GetFloodFillSamplePos(voxelPos, localNormal);
-            lighting += SampleFloodFill(samplePos); // * 3.0;
+            lighting += SampleFloodFill(samplePos) * 3.0;
         #endif
 
         vec3 localSkyLightDir = normalize(mul3(gbufferModelViewInverse, shadowLightPosition));
@@ -152,7 +152,7 @@ vec3 sample_indirect_lighting(const in vec3 localPos, const in vec3 localNormal)
 
 /* RENDERTARGETS: 6,7 */
 layout(location = 0) out vec4 outColor;
-layout(location = 1) out vec4 outPosition;
+layout(location = 1) out vec3 outPosition;
 
 void main() {
     ivec2 uv = ivec2(gl_FragCoord.xy);
@@ -201,5 +201,5 @@ void main() {
 
 
     outColor = prev_color;
-    outPosition = vec4(localPos, 1.0);
+    outPosition = localPos;
 }

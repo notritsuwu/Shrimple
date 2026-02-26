@@ -23,7 +23,6 @@
   "uniforms": [
     "fogStart",
     "fogEnd",
-    "fogShape",
     "fogColor",
     "skyColor",
     "viewSize",

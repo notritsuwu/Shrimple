@@ -142,7 +142,7 @@ void main() {
             vec3 screenPos = vec3(texcoord, depth);
             vec3 ndcPos = screenPos * 2.0 - 1.0;
 
-            #ifdef TAA_ENABLED
+            #if defined(TAA_ENABLED) && defined(PHOTONICS_REFLECT_ENABLED)
                 ndcPos.xy -= taa_offset * 2.0;
             #endif
 

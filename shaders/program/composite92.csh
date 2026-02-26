@@ -25,9 +25,8 @@ uniform vec2 viewSize;
     void copyToShared(const in ivec2 uv_base, const in uint i_shared) {
         if (i_shared >= (18*18)) return;
 
-        ivec2 uv_i = ivec2(i_shared % 18, i_shared / 18);
-        vec3 color = texelFetch(texTAA, uv_base + uv_i, 0).rgb;
-        sharedBuffer[i_shared] = color;
+        ivec2 uv = uv_base + ivec2(i_shared % 18, i_shared / 18);
+        sharedBuffer[i_shared] = texelFetch(texTAA, uv, 0).rgb;
     }
 #endif
 
