@@ -106,7 +106,7 @@ void main() {
     vec3 lighting = filter_ATrous(texcoord);
 
     vec4 reflectDataR = unpackUnorm4x8(reflectData.r);
-    lighting *= 0.3 * RGBToLinear(reflectDataR.rgb);
+    lighting *= RGBToLinear(reflectDataR.rgb);
 
     outFinal = src + lighting;
 }

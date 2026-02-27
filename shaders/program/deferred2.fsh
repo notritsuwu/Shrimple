@@ -15,6 +15,10 @@ uniform usampler2D TEX_REFLECT_SPECULAR;
 uniform sampler2D TEX_GI_COLOR;
 uniform sampler2D TEX_GI_POSITION;
 
+#ifdef SHADOW_CLOUDS
+    uniform sampler2D texCloudShadow;
+#endif
+
 #ifdef LIGHTING_COLORED
     uniform sampler3D texFloodFillA;
     uniform sampler3D texFloodFillB;
@@ -22,6 +26,9 @@ uniform sampler2D TEX_GI_POSITION;
 
 uniform vec3 skyColor;
 uniform float rainStrength;
+uniform float cloudHeight;
+uniform float cloudTime;
+uniform vec3 eyePosition;
 uniform vec3 cameraPosition;
 uniform vec3 previousCameraPosition;
 uniform mat4 gbufferModelViewInverse;
@@ -45,6 +52,10 @@ uniform vec2 taa_offset = vec2(0.0);
 
 #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
     #include "/lib/enhanced-lighting.glsl"
+#endif
+
+#ifdef SHADOW_CLOUDS
+    #include "/lib/cloud-shadows.glsl"
 #endif
 
 
@@ -142,12 +153,19 @@ vec3 sample_indirect_lighting(const in vec3 localPos, const in vec3 localNormal)
                     const vec3 skylightColor = RGBToLinear(vec3(0.89, 0.863, 0.722));
                 #endif
 
+                #ifdef SHADOW_CLOUDS
+                    vec2 cloudOffset = GetCloudOffset();
+                    vec3 cloudTexcoord = GetCloudShadowTexcoord(hitLocalPos, localSkyLightDir, cloudOffset);
+                    float cloudShadow = textureLod(texCloudShadow, fract(cloudTexcoord.xy), 0).r;
+                    sky_NoL *= _pow2(cloudShadow) * 0.5 + 0.5;
+                #endif
+
                 lighting += sky_NoL * hitAlbedo * skylightColor;
             }
         }
     }
 
-    return lighting / pdf;
+    return lighting;// * trace_tangentDir.z / pdf;
 }
 
 
@@ -160,9 +178,9 @@ void main() {
     float depth = texelFetch(TEX_DEPTH, uv, 0).r;
     vec3 screenPos = vec3(texcoord, depth);
 
-    #ifdef TAA_ENABLED
-        screenPos.xy -= taa_offset;
-    #endif
+//    #ifdef TAA_ENABLED
+//        screenPos.xy -= taa_offset;
+//    #endif
 
     vec3 ndcPos = screenPos * 2.0 - 1.0;
 
