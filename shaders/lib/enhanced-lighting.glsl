@@ -9,6 +9,8 @@ vec3 GetSkyLightColor(const in float localSunLightDir_y) {
         float dayF = smoothstep(-0.15, 0.05, localSunLightDir_y);
         float skyLightBrightness = mix(nightBrightF, 2.00, dayF);
 
+        skyLightBrightness *= mix(1.0, 0.3, rainStrength);
+
         return skyLightColor * skyLightBrightness;
     #endif
 }

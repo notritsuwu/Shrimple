@@ -1,16 +1,22 @@
 #include "/lib/constants.glsl"
 #include "/lib/common.glsl"
 
+
 #include "/lib/blocks.glsl"
 #include "/lib/sampling/lightmap.glsl"
 #include "/lib/octohedral.glsl"
 #include "/lib/oklab.glsl"
 #include "/lib/fog.glsl"
+#include "/lib/shadows.glsl"
 
 #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
     #include "/lib/enhanced-lighting.glsl"
 #else
     #include "/lib/vanilla-light.glsl"
+#endif
+
+#ifdef SHADOW_CLOUDS
+    #include "/lib/cloud-shadows.glsl"
 #endif
 
 
@@ -59,10 +65,20 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
     #endif
 
     float viewDist = length(localPos);
-    vec2 lmcoord = parameters.lightMap;
+    vec2 lmcoord_in = LightMapNorm(parameters.lightMap);
+
+    vec3 localSkyLightDir = normalize(mat3(vxModelViewInv) * shadowLightPosition);
+
+    float shadow = 1.0;
+    #ifdef SHADOW_CLOUDS
+        vec2 cloudOffset = GetCloudOffset();
+        vec3 cloudTexcoord = GetCloudShadowTexcoord(localPos, localSkyLightDir, cloudOffset);
+        float cloudShadow = textureLod(texCloudShadow, fract(cloudTexcoord.xy), 0).r;
+        shadow = _pow2(cloudShadow);
+    #endif
 
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
-        lmcoord = _pow3(lmcoord);
+        vec2 lmcoord = _pow3(lmcoord_in);
 
         const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
         vec3 blockLight = lmcoord.x * blockLightColor;
@@ -70,13 +86,18 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
         vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
 
-        vec3 localSkyLightDir = normalize(mat3(vxModelViewInv) * shadowLightPosition);
         float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
 
-        vec3 skyLight = lmcoord.y * (skyLight_NoLm*0.7 + 0.3) * skyLightColor;
+        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*(1.0 - shadowAmbientF) + shadowAmbientF) * skyLightColor;
 
         color.rgb = albedo.rgb * (blockLight + skyLight);
     #else
+        vec2 lmcoord = lmcoord_in;
+
+        #ifdef SHADOWS_ENABLED
+            lmcoord.y = min(lmcoord.y, shadow * (1.0 - shadowAmbientF) + shadowAmbientF);
+        #endif
+
         lmcoord.y *= GetOldLighting(localNormal);
 
         lmcoord = LightMapTex(lmcoord);
@@ -101,14 +122,16 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
 
     outFinal = color;
 
-    outGeoNormal = packUnorm2x16(OctEncode(localNormal));
+    #ifdef DEFERRED_NORMAL_ENABLED
+        outGeoNormal = packUnorm2x16(OctEncode(localNormal));
 
-    vec3 viewNormal = mat3(gbufferModelView) * localNormal;
-    outTexNormal = packUnorm2x16(OctEncode(viewNormal));
+        vec3 viewNormal = mat3(gbufferModelView) * localNormal;
+        outTexNormal = packUnorm2x16(OctEncode(viewNormal));
+    #endif
 
     #ifdef DEFERRED_SPECULAR_ENABLED
         outReflectSpecular = uvec2(
-            packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord.y)),
+            packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord_in.y)),
             packUnorm4x8(specularData));
     #endif
 }

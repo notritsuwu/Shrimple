@@ -29,6 +29,7 @@ uniform float fogDensity;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
+uniform float rainStrength;
 uniform vec4 entityColor;
 uniform float alphaTestRef;
 uniform vec3 sunPosition;

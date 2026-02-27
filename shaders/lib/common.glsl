@@ -48,6 +48,8 @@ const float sunPathRotation = 20; // [-60 -55 -50 -45 -40 -35 -30 -25 -20 -15 -1
 #define SHADOW_RESOLUTION 1024 // [128 256 512 768 1024 1536 2048 3072 4096 6144 8192]
 const float shadowDistance = 100; // [25 50 75 100 125 150 200 250 300 350 400 450 500 600 700 800 900 1000 1200 1400 1600 1800 2000 2200 2400 2600 2800 3000 3200 3400 3600 3800 4000]
 #define SHADOW_AMBIENT 20 // [0 5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95]
+#define SHADOW_CLOUDS
+
 //#define BLOOM_ENABLED
 #define BLOOM_STRENGTH 2.0 // [0.2 0.4 0.6 0.8 1.0 1.2 1.4 1.6 1.8 2.0 2.2 2.4 2.6 2.8 3.0 3.2 3.4 3.6 3.8 4.0 4.2 4.4 4.6 4.8 5.0 5.2 5.4 5.6 5.8 6.0 8 10 12 14 16 18 20]
 
@@ -97,6 +99,7 @@ const float dh_clipDistF = 0.85;
     const int shadowMapResolution = SHADOW_RESOLUTION;
 #else
     const int shadowMapResolution = 2;
+    #undef SHADOW_CLOUDS
 #endif
 
 #ifndef PHOTONICS
@@ -137,7 +140,11 @@ const float dh_clipDistF = 0.85;
 #ifdef SSAO_ENABLED
 #endif
 
-#if defined(VOXY) || defined(DISTANT_HORIZONS) || defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
+#if !defined(VOXY) && !defined(DISTANT_HORIZONS)
+    #undef SSAO_ENABLED
+#endif
+
+#if defined(SSAO_ENABLED) || defined(LIGHTING_REFLECT_ENABLED) || defined(PHOTONICS_LIGHT_ENABLED)
     #define DEFERRED_NORMAL_ENABLED
 #endif
 

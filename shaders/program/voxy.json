@@ -21,22 +21,30 @@
     "taaOffset": "{return taa_offset;}",
   #endif
   "uniforms": [
-    "fogStart",
-    "fogEnd",
+    "cameraPosition",
+    "cloudHeight",
+    "cloudTime",
+    "eyePosition",
     "fogColor",
-    "skyColor",
-    "viewSize",
-    "taa_offset",
-    "sunPosition",
-    "isEyeInWater",
+    "fogEnd",
+    "fogStart",
     "gbufferModelView",
     "gbufferModelViewInverse",
+    "isEyeInWater",
+    "rainStrength",
     "shadowLightPosition",
-    "vxRenderDistance",
+    "skyColor",
+    "sunPosition",
+    "taa_offset",
+    "viewSize",
+    "vxModelViewInv",
     "vxProjInv",
-    "vxModelViewInv"
+    "vxRenderDistance"
   ],
   "samplers": {
+    #ifdef SHADOW_CLOUDS
+      "texCloudShadow": "sampler2D",
+    #endif
     "lightmap": "sampler2D"
   }
 }

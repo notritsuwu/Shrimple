@@ -6,6 +6,8 @@ in vec2 texcoord;
 
 uniform sampler2D TEX_FINAL;
 
+uniform sampler2D texCloudShadow;
+
 #if DEBUG_VIEW == DEBUG_VIEW_SSAO
     uniform sampler2D TEX_SSAO;
 #endif
@@ -87,6 +89,11 @@ void main() {
             color = textureLod(TEX_SSAO, tex, 0).rrr;
         }
     #endif
+
+//    vec2 tex = (gl_FragCoord.xy - 8.5) / vec2(900);
+//    if (saturate(tex) == tex) {
+//        color = textureLod(texCloudShadow, fract(tex*3.0), 0).rrr;
+//    }
 
     color += (GetBayerValue(ivec2(gl_FragCoord.xy)) - 0.5) / 255.0;
 

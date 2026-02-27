@@ -21,6 +21,7 @@ uniform sampler2D TEX_GI_POSITION;
 #endif
 
 uniform vec3 skyColor;
+uniform float rainStrength;
 uniform vec3 cameraPosition;
 uniform vec3 previousCameraPosition;
 uniform mat4 gbufferModelViewInverse;
@@ -190,6 +191,9 @@ void main() {
 
     vec4 prev_color = textureLod(TEX_GI_COLOR, prev_screenPos, 0);
     vec3 prev_pos = textureLod(TEX_GI_POSITION, prev_screenPos, 0).xyz;
+
+    // reset accumulation if reprojected offscreen
+    if (saturate(prev_screenPos) != prev_screenPos) prev_color.a = 0.0;
 
     // adjust history weight on position match
     float viewDist = length(viewPos);

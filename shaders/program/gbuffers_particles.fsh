@@ -37,6 +37,7 @@ uniform float fogDensity;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
+uniform float rainStrength;
 uniform float alphaTestRef;
 uniform vec3 sunPosition;
 uniform vec3 shadowLightPosition;

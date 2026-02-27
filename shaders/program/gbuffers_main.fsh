@@ -43,10 +43,16 @@ uniform sampler2D gtexture;
     uniform sampler2D lightmap;
 #endif
 
-#ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
-    uniform sampler2DShadow shadowtex1HW;
-#else
-    uniform sampler2D shadowtex1;
+#ifdef SHADOWS_ENABLED
+    #ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
+        uniform sampler2DShadow shadowtex1HW;
+    #else
+        uniform sampler2D shadowtex1;
+    #endif
+
+    #ifdef SHADOW_CLOUDS
+        uniform sampler2D texCloudShadow;
+    #endif
 #endif
 
 #ifdef LIGHTING_COLORED
@@ -64,6 +70,10 @@ uniform float fogDensity;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
+uniform float rainStrength;
+uniform float cloudHeight;
+uniform float cloudTime;
+uniform vec3 eyePosition;
 uniform vec4 entityColor;
 uniform float alphaTestRef;
 uniform vec3 sunPosition;
@@ -122,6 +132,10 @@ uniform float dhFarPlane;
 
 #ifdef LIGHTING_HAND
     #include "/lib/hand-light.glsl"
+#endif
+
+#ifdef SHADOWS_ENABLED
+    #include "/lib/cloud-shadows.glsl"
 #endif
 
 
@@ -255,6 +269,13 @@ void main() {
             shadow = step(shadowPos.z, shadowDepth);
         #endif
 
+        #ifdef SHADOW_CLOUDS
+            vec2 cloudOffset = GetCloudOffset();
+            vec3 cloudTexcoord = GetCloudShadowTexcoord(vIn.localPos, localSkyLightDir, cloudOffset);
+            float cloudShadow = textureLod(texCloudShadow, fract(cloudTexcoord.xy), 0).r;
+            shadow *= _pow2(cloudShadow);
+        #endif
+
         float shadow_NoL = dot(localTexNormal, localSkyLightDir);
         shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
@@ -306,7 +327,9 @@ void main() {
 
         color.rgb = albedo * (blockLight + skyLight);
     #else
-        lmcoord.y = min(lmcoord.y, shadow * (1.0 - shadowAmbientF) + shadowAmbientF);
+        #ifdef SHADOWS_ENABLED
+            lmcoord.y = min(lmcoord.y, shadow * (1.0 - shadowAmbientF) + shadowAmbientF);
+        #endif
 
         lmcoord.y *= GetOldLighting(localTexNormal);
 
@@ -422,7 +445,7 @@ void main() {
 
     #ifdef DEFERRED_SPECULAR_ENABLED
         outReflectSpecular = uvec2(
-            packUnorm4x8(vec4(LinearToRGB(albedo), lmcoord.y)),
+            packUnorm4x8(vec4(LinearToRGB(albedo), vIn.lmcoord.y)),
             packUnorm4x8(specularData));
     #endif
 }

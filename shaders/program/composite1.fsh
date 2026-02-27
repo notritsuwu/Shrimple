@@ -33,8 +33,11 @@ uniform usampler2D TEX_REFLECT_SPECULAR;
 uniform float near;
 uniform float far;
 uniform float farPlane;
+uniform float fogStart;
+uniform float fogEnd;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
+uniform float rainStrength;
 uniform int isEyeInWater;
 uniform vec3 sunPosition;
 uniform vec3 cameraPosition;
@@ -126,6 +129,19 @@ void main() {
         vec4 reflectDataR = unpackUnorm4x8(reflectData.r);
         vec4 specularData = unpackUnorm4x8(reflectData.g);
 
+        vec3 screenPos = vec3(texcoord, depth);
+        vec3 ndcPos = screenPos * 2.0 - 1.0;
+
+        #if defined(TAA_ENABLED) && defined(PHOTONICS_REFLECT_ENABLED)
+            ndcPos.xy -= taa_offset * 2.0;
+        #endif
+
+        // TODO: fix hand depth
+
+        vec3 viewPos = project(gbufferProjectionInverse, ndcPos);
+        float viewDist = length(viewPos);
+        vec3 viewDir = viewPos / viewDist;
+
         #ifdef MATERIAL_PBR_ENABLED
             float roughness = mat_roughness(specularData.r);
             float metalness = mat_metalness(specularData.g);
@@ -139,18 +155,6 @@ void main() {
         float smoothness = 1.0 - roughness;
 
         if (smoothness > (1.5/255.0)) {
-            vec3 screenPos = vec3(texcoord, depth);
-            vec3 ndcPos = screenPos * 2.0 - 1.0;
-
-            #if defined(TAA_ENABLED) && defined(PHOTONICS_REFLECT_ENABLED)
-                ndcPos.xy -= taa_offset * 2.0;
-            #endif
-
-            // TODO: fix hand depth
-
-            vec3 viewPos = project(gbufferProjectionInverse, ndcPos);
-            vec3 viewDir = normalize(viewPos);
-
             uint reflectNormalData = texelFetch(TEX_TEX_NORMAL, uv, 0).r;
             vec3 viewNormal = OctDecode(unpackUnorm2x16(reflectNormalData));
 
@@ -267,7 +271,7 @@ void main() {
 //                    traceClipEnd.xy   -= taa_offset * 2.0;
 //                #endif
 
-                float dither = 0.5;//GetBayerValue(uv);
+                float dither = 0.0;//GetBayerValue(uv);
                 for (uint i = 0; i < MATERIAL_REFLECT_STEPS; i++) {
                     float f = (i + dither) / float(MATERIAL_REFLECT_STEPS);
                     traceClipPos = mix(traceClipStart, traceClipEnd, saturate(f));
@@ -278,7 +282,7 @@ void main() {
                     float screenDepthL = linearizeDepth(sampleClipDepth, near, farPlane);
                     float traceDepthL = linearizeDepth(traceClipPos.z, near, farPlane);
 
-                    if (screenDepthL < traceDepthL) {
+                    if (screenDepthL < traceDepthL - 0.02) {
                         hit = true;
                         break;
                     }
@@ -332,6 +336,19 @@ void main() {
         vec3 albedo = RGBToLinear(reflectDataR.rgb);
         vec3 tint = mix(vec3(1.0), albedo, metalness);
         reflectColor *= tint;
+
+        // TODO: apply fog
+        float borderFogF = GetBorderFogStrength(viewDist);
+        float envFogF = smoothstep(fogStart, fogEnd, viewDist);
+        float fogF = max(borderFogF, envFogF);
+
+        reflectColor *= 1.0 - fogF;
+
+//        vec3 fogColorL = RGBToLinear(fogColor);
+//        vec3 skyColorL = RGBToLinear(skyColor);
+//        vec3 localViewDir = normalize(localPos);
+//        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+//        color.rgb = mix(color.rgb, fogColorFinal, fogF);
     }
 
     vec3 src = texelFetch(TEX_FINAL, uv, 0).rgb;
