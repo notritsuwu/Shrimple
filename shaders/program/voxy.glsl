@@ -83,8 +83,8 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
         vec3 blockLight = lmcoord.x * blockLightColor;
 
-        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
-        vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
+//        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
+        vec3 skyLightColor = GetSkyLightColor(sunLocalDir.y);
 
         float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
 
@@ -115,7 +115,7 @@ void voxy_emitFragment(VoxyFragmentParameters parameters) {
         vec3 fogColorL = RGBToLinear(fogColor);
         vec3 skyColorL = RGBToLinear(skyColor);
         vec3 localViewDir = normalize(localPos);
-        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir);
 
         color.rgb = mix(color.rgb, fogColorFinal, fogF);
     #endif

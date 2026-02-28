@@ -39,7 +39,8 @@ uniform vec3 fogColor;
 uniform vec3 skyColor;
 uniform float rainStrength;
 uniform int isEyeInWater;
-uniform vec3 sunPosition;
+//uniform vec3 sunPosition;
+uniform vec3 sunLocalDir;
 uniform vec3 cameraPosition;
 uniform vec3 shadowLightPosition;
 uniform mat4 gbufferProjection;
@@ -229,15 +230,17 @@ void main() {
                             blockLight = lpvSample;
                         #endif
 
-                        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
-                        vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
+//                        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
+                        vec3 skyLightColor = GetSkyLightColor(sunLocalDir.y);
 
                         float skyLight_NoLm = max(dot(localSkyLightDir, hitLocalNormal), 0.0);
-                        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
+                        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*(1.0 - shadowAmbientF) + shadowAmbientF) * skyLightColor;
 
                         reflectColor = albedo * (blockLight + skyLight);
                     #else
-                        lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
+                        #ifdef SHADOWS_ENABLED
+                            lmcoord.y = min(lmcoord.y, shadow * (1.0 - shadowAmbientF) + shadowAmbientF);
+                        #endif
 
                         lmcoord.y *= GetOldLighting(hitLocalNormal);
 
@@ -323,7 +326,7 @@ void main() {
 
             if (!hit) {
                 vec3 reflectLocalDir = mat3(gbufferModelViewInverse) * reflectViewDir;
-                reflectColor = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), reflectLocalDir.y);
+                reflectColor = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), reflectLocalDir);
                 reflectColor *= lmcoord_y;
             }
 
@@ -347,7 +350,7 @@ void main() {
 //        vec3 fogColorL = RGBToLinear(fogColor);
 //        vec3 skyColorL = RGBToLinear(skyColor);
 //        vec3 localViewDir = normalize(localPos);
-//        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+//        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir);
 //        color.rgb = mix(color.rgb, fogColorFinal, fogF);
     }
 

@@ -15,9 +15,11 @@ in VertexData {
 uniform float near;
 uniform float far;
 uniform float farPlane;
+uniform vec3 sunLocalDir;
 uniform mat4 gbufferModelView;
 uniform int renderStage;
 uniform int isEyeInWater;
+uniform float rainStrength;
 uniform vec3 skyColor;
 uniform vec3 fogColor;
 uniform float fogDensity;
@@ -73,7 +75,7 @@ void main() {
     vec3 fogColorL = RGBToLinear(fogColor);
     vec3 skyColorL = RGBToLinear(skyColor);
     vec3 localViewDir = normalize(vIn.localPos);
-    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir);
 
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 

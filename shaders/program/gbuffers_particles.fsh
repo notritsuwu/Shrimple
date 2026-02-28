@@ -39,7 +39,7 @@ uniform float fogEnd;
 uniform vec3 skyColor;
 uniform float rainStrength;
 uniform float alphaTestRef;
-uniform vec3 sunPosition;
+uniform vec3 sunLocalDir;
 uniform vec3 shadowLightPosition;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowModelView;
@@ -147,21 +147,18 @@ void main() {
             blockLight += lpvSample * lpvFade;
         #endif
 
-        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
-        vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
-
-        vec3 skyLight = lmcoord.y * (shadow*0.7 + 0.3) * skyLightColor;
+        vec3 skyLightColor = GetSkyLightColor(sunLocalDir.y);
+        vec3 skyLight = lmcoord.y * (shadow*(1.0 - shadowAmbientF) + shadowAmbientF) * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
 
         #ifdef RENDER_TERRAIN
             color.rgb *= _pow2(vIn.color.a);
         #endif
-
-        // TODO: move to ambient lighting?
-        color.rgb *= tex_occlusion;
     #else
-        lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
+        #ifdef SHADOWS_ENABLED
+            lmcoord.y = min(lmcoord.y, shadow * (1.0 - shadowAmbientF) + shadowAmbientF);
+        #endif
 
         #ifdef LIGHTING_COLORED
             lmcoord.x *= 1.0 - lpvFade;
@@ -178,8 +175,10 @@ void main() {
         #endif
 
         color.rgb = albedo * lit;
-        color.rgb *= tex_occlusion;
     #endif
+
+    // TODO: move to ambient lighting?
+    color.rgb *= tex_occlusion;
 
     #ifdef MATERIAL_PBR_ENABLED
         float emission = mat_emission(specularData);
@@ -206,7 +205,7 @@ void main() {
     vec3 fogColorL = RGBToLinear(fogColor);
     vec3 skyColorL = RGBToLinear(skyColor);
     vec3 localViewDir = normalize(vIn.localPos);
-    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir);
 
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 

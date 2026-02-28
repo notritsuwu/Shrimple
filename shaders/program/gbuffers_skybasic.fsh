@@ -8,8 +8,10 @@ in vec3 localPos;
 uniform float far;
 uniform vec3 skyColor;
 uniform vec3 fogColor;
+uniform float rainStrength;
 uniform int renderStage;
 uniform int isEyeInWater;
+uniform vec3 sunLocalDir;
 
 uniform int vxRenderDistance;
 uniform float dhFarPlane;
@@ -30,7 +32,7 @@ void main() {
     }
     else {
         vec3 localViewDir = normalize(localPos);
-        color.rgb = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), localViewDir.y);
+        color.rgb = GetSkyFogColor(RGBToLinear(skyColor), RGBToLinear(fogColor), localViewDir);
         color.a = 1.0;
     }
 

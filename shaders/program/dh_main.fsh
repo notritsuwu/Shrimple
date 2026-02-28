@@ -34,7 +34,7 @@ uniform vec3 fogColor;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
-uniform vec3 sunPosition;
+uniform vec3 sunLocalDir;
 uniform vec3 shadowLightPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferModelViewInverse;
@@ -152,8 +152,8 @@ void main() {
         const vec3 blockLightColor = pow(vec3(0.922, 0.871, 0.686), vec3(2.2));
         vec3 blockLight = lmcoord.x * blockLightColor;
 
-        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
-        vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
+//        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
+        vec3 skyLightColor = GetSkyLightColor(sunLocalDir.y);
 
         float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
         vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
@@ -189,7 +189,7 @@ void main() {
 
         vec3 fogColorL = RGBToLinear(fogColor);
         vec3 skyColorL = RGBToLinear(skyColor);
-        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir);
 
         color.rgb = mix(color.rgb, fogColorFinal, fogF);
     #endif

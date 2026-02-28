@@ -34,7 +34,7 @@
     "rainStrength",
     "shadowLightPosition",
     "skyColor",
-    "sunPosition",
+    "sunLocalDir",
     "taa_offset",
     "viewSize",
     "vxModelViewInv",

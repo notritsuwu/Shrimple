@@ -33,13 +33,14 @@ uniform usampler2D TEX_REFLECT_SPECULAR;
 
 uniform vec2 viewSize;
 //uniform vec3 sun_dir;
-uniform vec3 sunPosition;
+//uniform vec3 sunPosition;
+uniform vec3 sunLocalDir;
 uniform vec2 taa_offset = vec2(0.0);
 
 #include "/lib/octohedral.glsl"
 
 
-vec3 sun_direction = normalize(mat3(gbufferModelViewInverse) * sunPosition);
+vec3 sun_direction = sunLocalDir;
 
 // TODO: wtf is this?
 vec3 indirect_light_color = vec3(1.0);// mix(texelFetch(colortex4, ivec2(191, 1), 0).rgb, vec3(1f), 0.5);

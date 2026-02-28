@@ -17,10 +17,16 @@ in VertexData {
     uniform sampler3D texFloodFillB;
 #endif
 
-#ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
-    uniform sampler2DShadow shadowtex1HW;
-#else
-    uniform sampler2D shadowtex1;
+#ifdef SHADOWS_ENABLED
+    #ifdef IRIS_FEATURE_SEPARATE_HARDWARE_SAMPLERS
+        uniform sampler2DShadow shadowtex1HW;
+    #else
+        uniform sampler2D shadowtex1;
+    #endif
+
+    #ifdef SHADOW_CLOUDS
+        uniform sampler2D texCloudShadow;
+    #endif
 #endif
 
 uniform float far;
@@ -30,16 +36,19 @@ uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
 uniform float rainStrength;
-uniform vec4 entityColor;
-uniform float alphaTestRef;
-uniform vec3 sunPosition;
+uniform float cloudHeight;
+uniform float cloudTime;
+uniform vec3 eyePosition;
+uniform vec3 cameraPosition;
+uniform vec3 sunLocalDir;
 uniform vec3 shadowLightPosition;
 uniform mat4 gbufferModelView;
 uniform mat4 gbufferProjection;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 shadowModelView;
 uniform mat4 shadowProjection;
-uniform vec3 cameraPosition;
+uniform vec4 entityColor;
+uniform float alphaTestRef;
 uniform int frameCounter;
 uniform int isEyeInWater;
 uniform ivec2 atlasSize;
@@ -53,6 +62,7 @@ uniform float dhFarPlane;
 #include "/lib/fog.glsl"
 #include "/lib/octohedral.glsl"
 #include "/lib/sampling/lightmap.glsl"
+#include "/lib/shadows.glsl"
 
 #if defined(MATERIAL_PBR_ENABLED) || defined(LIGHTING_REFLECT_ENABLED)
     #include "/lib/fresnel.glsl"
@@ -70,8 +80,8 @@ uniform float dhFarPlane;
     #include "/lib/floodfill-render.glsl"
 #endif
 
-#ifdef SHADOWS_ENABLED
-    #include "/lib/shadows.glsl"
+#ifdef SHADOW_CLOUDS
+    #include "/lib/cloud-shadows.glsl"
 #endif
 
 #include "/photonics/photonics.glsl"
@@ -139,6 +149,13 @@ void main() {
             shadow = step(shadowPos.z, shadowDepth);
         #endif
 
+        #ifdef SHADOW_CLOUDS
+            vec2 cloudOffset = GetCloudOffset();
+            vec3 cloudTexcoord = GetCloudShadowTexcoord(vIn.localPos, localSkyLightDir, cloudOffset);
+            float cloudShadow = textureLod(texCloudShadow, fract(cloudTexcoord.xy), 0).r;
+            shadow *= _pow2(cloudShadow);
+        #endif
+
         float shadow_NoL = dot(localNormal, localSkyLightDir);
         shadow *= pow(saturate(shadow_NoL), 0.2);
     #endif
@@ -149,6 +166,11 @@ void main() {
     #endif
 
     vec2 lmcoord = vIn.lmcoord;
+
+    #ifdef PHOTONICS_BLOCK_LIGHT_ENABLED
+        lmcoord.x = 0.0;
+    #endif
+
     #if LIGHTING_MODE == LIGHTING_MODE_ENHANCED
         lmcoord = _pow3(lmcoord);
 
@@ -161,11 +183,11 @@ void main() {
             blockLight = mix(blockLight, lpvSample, lpvFade);
         #endif
 
-        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
-        vec3 skyLightColor = GetSkyLightColor(localSunLightDir.y);
+//        vec3 localSunLightDir = normalize(mat3(gbufferModelViewInverse) * sunPosition);
+        vec3 skyLightColor = GetSkyLightColor(sunLocalDir.y);
 
         float skyLight_NoLm = max(dot(localSkyLightDir, localNormal), 0.0);
-        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*0.7 + 0.3) * skyLightColor;
+        vec3 skyLight = lmcoord.y * ((skyLight_NoLm * shadow)*(1.0 - shadowAmbientF) + shadowAmbientF) * skyLightColor;
 
         color.rgb = albedo * (blockLight + skyLight);
 
@@ -173,7 +195,9 @@ void main() {
 //            color.rgb *= _pow2(vIn.color.a);
 //        #endif
     #else
-        lmcoord.y = min(lmcoord.y, shadow * 0.5 + 0.5);
+        #ifdef SHADOWS_ENABLED
+            lmcoord.y = min(lmcoord.y, shadow * (1.0 - shadowAmbientF) + shadowAmbientF);
+        #endif
 
         lmcoord.y *= GetOldLighting(localNormal);
 
@@ -209,7 +233,7 @@ void main() {
 
     vec3 fogColorL = RGBToLinear(fogColor);
     vec3 skyColorL = RGBToLinear(skyColor);
-    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+    vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir);
 
     color.rgb = mix(color.rgb, fogColorFinal, fogF);
 

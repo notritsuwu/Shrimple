@@ -113,6 +113,8 @@ suffix.shadowDistance=m
 option.SHADOW_AMBIENT=Ambient
 suffix.SHADOW_AMBIENT=%
 
+option.SHADOW_CLOUDS=Cloud Shadows
+
 
 screen.EFFECTS=Effects
 

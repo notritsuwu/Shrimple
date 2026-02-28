@@ -31,7 +31,10 @@ uniform float fogDensity;
 uniform float fogStart;
 uniform float fogEnd;
 uniform vec3 skyColor;
+uniform float rainStrength;
 uniform int isEyeInWater;
+//uniform vec3 sunPosition;
+uniform vec3 sunLocalDir;
 uniform mat4 gbufferModelViewInverse;
 uniform mat4 gbufferProjectionInverse;
 uniform vec2 taa_offset = vec2(0.0);
@@ -178,7 +181,7 @@ void main() {
         vec3 fogColorL = RGBToLinear(fogColor);
         vec3 skyColorL = RGBToLinear(skyColor);
         vec3 localViewDir = normalize(localPos);
-        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir.y);
+        vec3 fogColorFinal = GetSkyFogColor(skyColorL, fogColorL, localViewDir);
 
         color.rgb = mix(color.rgb, fogColorFinal, fogF);
     }
