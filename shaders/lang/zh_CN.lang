@@ -10,7 +10,7 @@ value.DEBUG_VIEW.0=无
 value.DEBUG_VIEW.1=SSAO
 
 option.DEBUG_WHITEWORLD=纯白世界
-option.DEBUG_WHITEWORLD.comment=是所有纹理变成纯白色，用于单独检查光照。
+option.DEBUG_WHITEWORLD.comment=将所有纹理变成纯白色，用于单独检查光照。
 
 
 screen.WORLD=世界
