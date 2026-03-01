@@ -142,7 +142,7 @@ option.TONEMAP_ENABLED=色调映射
 
 screen.TAA=时间性抗锯齿
 
-option.TAA_ENABLED=启用时间性抗锯齿（TAA）。
+option.TAA_ENABLED=启用时间性抗锯齿（TAA）
 
 option.TAA_SHARPNESS=锐化
 suffix.TAA_SHARPNESS=%
